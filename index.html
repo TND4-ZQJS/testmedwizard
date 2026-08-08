@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nagic Filler - CI Pro Universe</title>
+    <title>Magic Filler - CI Pro Universe</title>
 <style>
 /* ============================================================
    GLOBAL DESIGN VARIABLES (Unified Workspace Framework)
@@ -475,6 +475,7 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
     <div class="step"><span class="step-num">5</span>Doctors</div>
     <div class="step"><span class="step-num">6</span>E-Banking</div>
     <div class="step"><span class="step-num">7</span>Sign</div>
+    <div class="step"><span class="step-num">8</span>Generate</div>
   </div>
   
   <!-- SECTION: Policy Info -->
@@ -1067,6 +1068,33 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
     <button id="resetAll" class="secondary">Reset All</button>
   </section>
   </div>
+
+    <div class="wizard-step"><!-- Step 8: Generate -->
+<section class="section">
+  <h2>Generate PDF / Reset Form</h2>
+  <div class="action-center">
+    
+    <!-- Restored pdf-grid wrapper here -->
+    <div class="pdf-grid">
+      <div class="doc-row">
+        <div class="doc-info">
+          <b class="doc-title">Noimnation Form</b>
+          <span class="doc-sub">LF4054 (email to POS Benefit: myben@manulife.my )</span>
+        </div>
+        <div class="actions">
+          <button onclick="fillPDF('Nomination and Trustees_LF4056_LF4054_fillable.pdf', 'view')" class="btn-secondary">View</button>
+          <button onclick="fillPDF('Nomination and Trustees_LF4056_LF4054_fillable.pdf', 'download')" class="btn-primary">Download</button>
+        </div>
+      </div>
+    </div> <!-- Close pdf-grid -->
+
+    <div class="reset-container">
+      <button onclick="resetAllData()" class="btn-reset">Reset All Fields & Signatures</button>
+    </div>
+
+  </div> <!-- Close action-center -->
+</section>
+</div><!-- (END) STEP 5: Generate -->  
 
     <!-- NAVIGATION BUTTONS -->
     <div class="wizard-actions">
