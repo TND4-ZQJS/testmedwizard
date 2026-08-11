@@ -1061,8 +1061,8 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
           <span class="doc-sub">LF4054 (email to POS Benefit: myben@manulife.my )</span>
         </div>
         <div class="actions">
-          <button onclick="fillPDF('Medical and Accident Claim_Claimant's Statement_LF5191_202305_fillable.pdf', 'view')" class="btn-secondary">View</button>
-          <button onclick="fillPDF('Medical and Accident Claim_Claimant's Statement_LF5191_202305_fillable.pdf', 'download')" class="btn-primary">Download</button>
+          <button onclick="fillPDF('Medical and Accident Claim_Claimant Statement_LF5191_202305_fillable.pdf', 'view')" class="btn-secondary">View</button>
+          <button onclick="fillPDF('Medical and Accident Claim_Claimant Statement_LF5191_202305_fillable.pdf', 'download')" class="btn-primary">Download</button>
         </div>
       </div>
     </div> <!-- Close pdf-grid -->
@@ -1114,7 +1114,7 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
   
 /* ---------- CONFIG ---------- */
 const FORM_ID = "ClmMed";    
-const PDF_FILENAME = "Medical and Accident Claim_Claimant's Statement_LF5191_202305_fillable.pdf";
+const PDF_FILENAME = "Medical and Accident Claim_Claimant Statement_LF5191_202305_fillable.pdf";
 
 // ---------- Ilness/Accident SECTION CONTROL CONFIG (Show/Hide Section) ----------
 function toggleIncidentSections() {
@@ -1666,54 +1666,42 @@ function autoLinkPersonFields(config) {
 
 
 /* ---------- UNIVERSAL HELPER FUNCTION ---------- */
-
-  //Detect input type - text/dropdown/checkbox/radio
-function safeSetField(form, fieldName, value) {
-  if (value === null || value === undefined) return;
-
-  try {
-    let field;
-
-    // text or textarea, then force Uppercase
-    try {
-      field = form.getTextField(fieldName);
-      // Keep original case for email
-     if (!isEmailField(fieldName)) {
-  field.setText(value.toUpperCase());
-} else {
-  field.setText(value); // email remains as typed
+function $(id) {
+  return document.getElementById(id);
 }
-      return;
-    } catch (e) {}
 
-    // dropdown
-    try {
-      field = form.getDropdown(fieldName);
-      field.select(value);
-      return;
-    } catch (e) {}
+// Handles Text fields, Email casing, Dropdowns, and Radios safely
+function safeSetText(form, name, text) {
+  if (text === null || text === undefined) return;
+  const val = String(text);
 
-    // checkbox
-    try {
-      field = form.getCheckBox(fieldName);
-      if (value === true || value === "true" || value === "on" || value === "checked") {
-        field.check();
-      } else {
-        field.uncheck();
-      }
-      return;
-    } catch (e) {}
-    
-    // radio
-    try {
-      field = form.getRadioGroup(fieldName);
-      field.select(value);
-      return;
-    } catch (e) {}
+  // 1. Text Field
+  try {
+    const field = form.getTextField(name);
+    const finalVal = (typeof isEmailField === "function" && isEmailField(name)) ? val : val.toUpperCase();
+    field.setText(finalVal);
+    return;
+  } catch (e) {}
 
-    console.warn(`Field ${fieldName} not found in PDF`);
-  } catch (err) {
-    console.error(`Error setting field ${fieldName}`, err);
+  // 2. Dropdown or Radio Group
+  try {
+    form.getDropdown(name).select(val);
+    return;
+  } catch (e) {}
+  
+  try {
+    form.getRadioGroup(name).select(val);
+    return;
+  } catch (e) {}
+}
+
+// Dedicated helper for explicit safeCheck calls
+function safeCheck(form, name, checked) {
+  try {
+    const cb = form.getCheckBox(name);
+    if (checked) cb.check(); else cb.uncheck();
+  } catch (e) {
+    /* missing field ok */
   }
 }
 
@@ -2218,18 +2206,17 @@ writeBankAccountType(form);
 }
 
 
-/* ---------- RESET ALL DATA function ---------- */
+/* ---------- RESET ALL DATA (ClmMed / LF5191) ---------- */
 function resetAllData() {
   if (!confirm("Are you sure you want to reset the form? All saved data will be cleared.")) {
     return;
   }
 
-  // 1) Clear ALL saved keys
+  // 1. Clear saved auto-fill data from local storage
   localStorage.clear();
 
-  // 2) Clear the live UI values (inputs, checkboxes, radios, selects, textareas)
+  // 2. Clear all input fields, drop-downs, and textareas
   document.querySelectorAll("input, select, textarea").forEach(el => {
-    if (!el.id) return;
     if (el.type === "checkbox" || el.type === "radio") {
       el.checked = false;
     } else {
@@ -2237,14 +2224,21 @@ function resetAllData() {
     }
   });
 
-  // 3) Reset signature previews
-  $("preview_simple_owner").innerHTML   = `<span>Tap to Sign (Policyowner/Assignee)</span>`;
-  $("preview_simple_witness").innerHTML = `<span>Tap to Sign (Witness)</span>`;
-  $("preview_simple_assignee").innerHTML = `<span>Tap to Sign (Trustee/Nominee)</span>`;
+  // 3. Reset Signature Previews back to default state
+  document.querySelectorAll("[data-sig-role]").forEach(block => {
+    const role = block.dataset.sigRole;
+    const previewEl = block.querySelector("[data-sig-preview]");
+    if (previewEl) {
+      // Formats role nicely (e.g. "claimant" -> "Claimant")
+      const formattedRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Signer";
+      previewEl.innerHTML = `<span>Tap to Sign (${formattedRole})</span>`;
+    }
+  });
 
-
-  // 4) Update status text if you have it
-  showSaveStatus();
+  // 4. Update the auto-save status indicator UI
+  if (typeof showSaveStatus === "function") {
+    showSaveStatus();
+  }
 }
 
 
