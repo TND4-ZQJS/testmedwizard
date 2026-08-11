@@ -1046,11 +1046,6 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
      </div>
       
   </section>
-    
-    <section class="section actions">
-    <button id="generate">Generate PDF</button>
-    <button id="resetAll" class="secondary">Reset All</button>
-  </section>
   </div>
 
     <div class="wizard-step"><!-- Step 8: Generate -->
@@ -2223,7 +2218,7 @@ writeBankAccountType(form);
 
 
 /* ---------- RESET ALL DATA function ---------- */
-function resetAll() {
+function resetAllData() {
   if (!confirm("Are you sure you want to reset the form? All saved data will be cleared.")) {
     return;
   }
