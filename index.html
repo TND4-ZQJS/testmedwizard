@@ -993,13 +993,16 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
     <input id="ClmMed_Sign_PO_Year" class="persist date-input" placeholder="YYYY" type="text" maxlength="4" inputmode="numeric" pattern="\d*">
   </div>
 </div>
-
-        <div class="sig-preview" id="preview_simple_owner" onclick="openSig('simple_owner')">
-      <span>Tap to Sign (Policyowner / Assignee)</span>
-    </div>
-    <div class="row">
-      <button id="clearPreview_Simple_Owner" class="secondary" type="button">Clear Signature</button>
-    </div>
+     <!-- Tap-to-sign previews (Insured Person/Policyowner/Claimant) --> 
+     <div data-sig-role="owner" data-sig-title="Sign: Insured Person/Policyowner/Claimant">
+        <div class="sig-preview" data-sig-preview>
+      <span>Tap to Sign (Insured Person/Policyowner/Claimant)</span>
+        </div>
+        <div class="row">
+      <button class="secondary" type="button" data-sig-clear>Clear Signature</button>
+        </div>
+     </div>
+      
   </section>
 
   <!-- SECTION: Witness Signature -->
@@ -1032,35 +1035,16 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
 </div>
 
 
-    <div class="sig-preview" id="preview_simple_witness" onclick="openSig('simple_witness')">
+       <!-- Tap-to-sign previews (Witness) --> 
+     <div data-sig-role="witness" data-sig-title="Sign: Witness">
+        <div class="sig-preview" data-sig-preview>
       <span>Tap to Sign (Witness)</span>
-    </div>
-    <div class="row">
-      <button id="clearPreview_Simple_Witness" class="secondary" type="button">Clear Signature</button>
-    </div>
-  </section>
-  
-    <!-- SECTION: Assignee -->
-  <section class="section hidden-section">
-    <h2>Signature of Trustee(s)/Nominee(s)</h2>
-    <div class="row">
-      <label style="flex:1">Name of Trustee/Assignee
-        <input id="Complx_Sign_Trustee_Name" class="persist" type="text" placeholder="Enter name">
-      </label>
-    </div>
-    <div class="row">
-    <label style="flex:1">New IC/Old IC/Passport No.
-        <input id="Complx_Sign_Trustee_NIRC" class="persist" type="text" placeholder="e.g. 900101-14-1234">
-    </label>
-    </div>
-
-
-    <div class="sig-preview" id="preview_simple_assignee" onclick="openSig('simple_assignee')">
-      <span>Tap to Sign (Trustee/Nominee)</span>
-    </div>
-    <div class="row">
-      <button id="clearPreview_Simple_Assignee" class="secondary" type="button">Clear Signature</button>
-    </div>
+        </div>
+        <div class="row">
+      <button class="secondary" type="button" data-sig-clear>Clear Signature</button>
+        </div>
+     </div>
+      
   </section>
     
     <section class="section actions">
