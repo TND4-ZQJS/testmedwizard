@@ -1119,6 +1119,65 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
 const FORM_ID = "ClmMed";    
 const PDF_FILENAME = "Medical and Accident Claim_Claimant Statement_LF5191_202305_fillable.pdf";
 
+/* ---------- DOM Helpers ---------- */
+const $ = (id) => document.getElementById(id);
+
+function safeSetText(form, name, text){
+  try{ form.getTextField(name).setText(String(text || "")); } catch(e){ }
+}
+function safeCheck(form, name, checked){
+  try{ const cb = form.getCheckBox(name); if (checked) cb.check(); else cb.uncheck(); } catch(e){ }
+}
+
+/* ---------- Save Indicator & Persistence ---------- */
+const saveStatusEl = $("saveStatus");
+function showSaveStatus(){
+  saveStatusEl.style.opacity = '1';
+  clearTimeout(saveStatusEl._timer);
+  saveStatusEl._timer = setTimeout(()=> saveStatusEl.style.opacity = '0', 1200);
+}
+
+function saveElValue(el){
+  if(!el || !el.id) return;
+  if(el.type === 'checkbox' || el.type === 'radio'){
+    localStorage.setItem(el.id, el.checked);
+  } else {
+    localStorage.setItem(el.id, el.value);
+  }
+  showSaveStatus();
+}
+
+function autoBindSave(el){
+  const saved = localStorage.getItem(el.id);
+  if(saved !== null){
+    if(el.type === 'checkbox' || el.type === 'radio') el.checked = (saved === 'true');
+    else el.value = saved;
+  }
+  el.addEventListener((el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input', ()=> saveElValue(el));
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (!el.id) return;
+    autoBindSave(el);
+
+    if (el.type === "text" || el.tagName === "TEXTAREA") {
+      if (!el.id.toLowerCase().includes("email")) {
+        el.addEventListener("input", () => {
+          const cursor = el.selectionStart;
+          el.value = el.value.toUpperCase();
+          el.setSelectionRange(cursor, cursor);
+          saveElValue(el);
+        });
+      }
+    }
+  });
+
+  initSignatureFields();
+  loadFromLocalStorage();
+});
+    
+
 // ---------- Ilness/Accident SECTION CONTROL CONFIG (Show/Hide Section) ----------
 function toggleIncidentSections() {
   const isIllness = document.getElementById("optionIllness").checked;
@@ -1328,72 +1387,6 @@ document.querySelectorAll("input.bank-type").forEach(el => {
   });
 });
 
-
-/* --- SAVE STATUS + LOCALSTORAGE (Text, Checkbox, Dropdown) ---------- */
-const saveStatusEl = document.getElementById("saveStatus");
-
-/* ---------- EMAIL FIELDS (Step 1) ---------- */
-const EMAIL_FIELDS = [
-  "ClmMed_Insuredinfo_Email",
-  "ClmMed_POinfo_Email"
-];
-
-/* ---------- Helper (Step 2) ---------- */
-function isEmailField(id) {
-  return EMAIL_FIELDS.includes(id);
-}
-
-
-function showSaveStatus(){
-  saveStatusEl.style.opacity = 1;
-  clearTimeout(saveStatusEl._timer);
-  saveStatusEl._timer = setTimeout(() => saveStatusEl.style.opacity = 0, 1200);
-}
-
-function saveElValue(el){
-  localStorage.setItem(el.id, el.value);
-  showSaveStatus();
-}
-
-function autoBindSave(el) {
-  const saved = localStorage.getItem(el.id);
-
-  // Restore
-  if (el.type === "checkbox") {
-    if (saved !== null) el.checked = (saved === "true");
-  } else if (el.type === "radio") {
-    const savedRadioValue = localStorage.getItem(el.name);
-    if (savedRadioValue) el.checked = (el.id === savedRadioValue);
-  } else if (saved !== null) {
-    el.value = saved;
-  }
-
-  // Bind save
-  if (el.tagName === "SELECT") {
-    el.addEventListener("change", () => saveElValue(el));
-  } else if (el.type === "checkbox") {
-    el.addEventListener("change", () => {
-      localStorage.setItem(el.id, el.checked);
-      showSaveStatus();
-    });
-  } else if (el.type === "radio") {
-    el.addEventListener("change", () => {
-      if (el.checked) {
-        localStorage.setItem(el.name, el.id);
-        showSaveStatus();
-      }
-    });
-  } else {
-    el.addEventListener("input", () => {
-      // only uppercase if not in the email list
-     if (!isEmailField(el.id)) {
-  el.value = el.value.toUpperCase();
-}
-      localStorage.setItem(el.id, el.value);
-      showSaveStatus();
-    });
-  }
-}
 
 /********************************************
  * BASIC INFO POLICY NO (1 input per entry)
@@ -1667,46 +1660,6 @@ function autoLinkPersonFields(config) {
   applyLinking();
 }
 
-
-/* ---------- UNIVERSAL HELPER FUNCTION ---------- */
-function $(id) {
-  return document.getElementById(id);
-}
-
-// Handles Text fields, Email casing, Dropdowns, and Radios safely
-function safeSetText(form, name, text) {
-  if (text === null || text === undefined) return;
-  const val = String(text);
-
-  // 1. Text Field
-  try {
-    const field = form.getTextField(name);
-    const finalVal = (typeof isEmailField === "function" && isEmailField(name)) ? val : val.toUpperCase();
-    field.setText(finalVal);
-    return;
-  } catch (e) {}
-
-  // 2. Dropdown or Radio Group
-  try {
-    form.getDropdown(name).select(val);
-    return;
-  } catch (e) {}
-  
-  try {
-    form.getRadioGroup(name).select(val);
-    return;
-  } catch (e) {}
-}
-
-// Dedicated helper for explicit safeCheck calls
-function safeCheck(form, name, checked) {
-  try {
-    const cb = form.getCheckBox(name);
-    if (checked) cb.check(); else cb.uncheck();
-  } catch (e) {
-    /* missing field ok */
-  }
-}
 
 /* ---------- Date Input Helper : Combine into ONE string  ---------- */
 document.addEventListener("DOMContentLoaded", () => {
