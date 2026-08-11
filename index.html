@@ -1116,7 +1116,7 @@ const FORM_ID = "ClmMed";
 const PDF_FILENAME = "Medical and Accident Claim_Claimant Statement_LF5191_202305_fillable.pdf";
 
 /* ---------- DOM Helpers ---------- */
-const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id) || { value: "", checked: false };
 
 function safeSetText(form, name, text){
   try{ form.getTextField(name).setText(String(text || "")); } catch(e){ }
