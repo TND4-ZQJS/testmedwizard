@@ -2035,7 +2035,7 @@ async function fillPDF(templateFileName, action = 'download') {
     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
     const form = pdfDoc.getForm(); // <-- FIXED: Form initialization added
 
-   // Section A - Policy Details 
+   // Policy Details 
   safeSetText(form, "ClmMed_Basicinfo_PolicyNo1", $("ClmMed_Basicinfo_PolicyNo1").value);
   safeSetText(form, "ClmMed_Basicinfo_PolicyNo2", $("ClmMed_Basicinfo_PolicyNo2").value);
   safeSetText(form, "ClmMed_Basicinfo_PolicyNo3", $("ClmMed_Basicinfo_PolicyNo3").value);
@@ -2046,7 +2046,7 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Basicinfo_Agent", $("ClmMed_Basicinfo_Agent").value);
   safeSetText(form, "ClmMed_Basicinfo_Mobile", $("ClmMed_Basicinfo_Mobile").value);  
       
-  // Section A - Claim type 
+  // Claim type 
   safeCheck(form, "ClmMed_Claimtype_Hosp", $("ClmMed_Claimtype_Hosp").checked);
   safeCheck(form, "ClmMed_Claimtype_PrePost", $("ClmMed_Claimtype_PrePost").checked);
   safeCheck(form, "ClmMed_Claimtype_HospBen", $("ClmMed_Claimtype_HospBen").checked);
@@ -2058,106 +2058,102 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Claimtype_Others_Text", $("ClmMed_Claimtype_Others_Text").value);   
   safeSetText(form, "ClmMed_Claimtype_Amt", $("ClmMed_Claimtype_Amt").value);      
 
-  // Section A - Insured     
-  safeSetText(form, "Nom_Nominee_Trustee_NIRC", $("Nom_Nominee_Trustee_NIRC").value);
-  safeSetText(form, "Nom_Nominee_Witness_Name", $("Nom_Nominee_Witness_Name").value);
-  safeSetText(form, "Nom_Nominee_Witness_NIRC", $("Nom_Nominee_Witness_NIRC").value);
-  safeSetText(form, "Nom_Nominee_Witness_Mobile", $("Nom_Nominee_Witness_Mobile").value);      
+  // Insured     
+  safeSetText(form, "ClmMed_Insuredinfo_Name", $("ClmMed_Insuredinfo_Name").value);
+  safeSetText(form, "ClmMed_Insuredinfo_NIRC", $("ClmMed_Insuredinfo_NIRC").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Mobile", $("ClmMed_Insuredinfo_Mobile").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Email", $("ClmMed_Insuredinfo_Email").value); 
+  safeSetText(form, "ClmMed_Insuredinfo_Add", $("ClmMed_Insuredinfo_Add").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Occupation", $("ClmMed_Insuredinfo_Occupation").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Duties", $("ClmMed_Insuredinfo_Duties").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Employer", $("ClmMed_Insuredinfo_Employer").value);  
+  safeSetText(form, "ClmMed_Insuredinfo_EmployerAdd", $("ClmMed_Insuredinfo_EmployerAdd").value);     
+
+   // Policy Owner     
+  safeSetText(form, "ClmMed_POinfo_Name", $("ClmMed_POinfo_Name").value);
+  safeSetText(form, "ClmMed_POinfo_NIRC", $("ClmMed_POinfo_NIRC").value);
+  safeSetText(form, "ClmMed_POinfo_Mobile", $("ClmMed_POinfo_Mobile").value);
+  safeSetText(form, "ClmMed_POinfo_Email", $("ClmMed_POinfo_Email").value); 
+  safeSetText(form, "ClmMed_POinfo_Add", $("ClmMed_POinfo_Add").value);     
+
+    // Claims Details 
+  safeSetText(form, "ClmMed_Illness_Nature", $("ClmMed_Illness_Nature").value);
+  safeSetText(form, "ClmMed_Illness_Sympton", $("ClmMed_Illness_Sympton").value);
+  safeSetText(form, "ClmMed_Illness_Diagnosis_Month", $("ClmMed_Illness_Diagnosis_Month").value);
+  safeSetText(form, "ClmMed_Illness_Diagnosis_Year", $("ClmMed_Illness_Diagnosis_Year").value);
+  safeSetText(form, "ClmMed_Illness_Onset_Month", $("ClmMed_Illness_Onset_Month").value);
+  safeSetText(form, "ClmMed_Illness_Onset_Year", $("ClmMed_Illness_Onset_Year").value);     
+  safeSetText(form, "ClmMed_Illness_Diagnosis_Day", $("ClmMed_Illness_Diagnosis_Day").value);
+  safeSetText(form, "ClmMed_Accident_Day", $("ClmMed_Accident_Day").value);
+  safeSetText(form, "ClmMed_Accident_Month", $("ClmMed_Accident_Month").value);
+  safeSetText(form, "ClmMed_Accident_Time", $("ClmMed_Accident_Time").value);  
+  safeSetText(form, "ClmMed_Accident_AM", $("ClmMed_Accident_AM").value);
+  safeSetText(form, "ClmMed_Accident_PM", $("ClmMed_Accident_PM").value);
+  safeSetText(form, "ClmMed_Accident_Place", $("ClmMed_Accident_Place").value);
+  safeSetText(form, "ClmMed_Accident_How", $("ClmMed_Accident_How").value);
+  safeSetText(form, "ClmMed_Accident_Injury", $("ClmMed_Accident_Injury").value);
+  safeSetText(form, "ClmMed_Illness_Onset_Day", $("ClmMed_Illness_Onset_Day").value);
+  safeSetText(form, "ClmMed_Accident_AbsentDay", $("ClmMed_Accident_AbsentDay").value);
+  safeSetText(form, "ClmMed_Accident_Year", $("ClmMed_Accident_Year").value);
+  safeSetText(form, "ClmMed_Accident_ReturnDay", $("ClmMed_Accident_ReturnDay").value);   
+  safeSetText(form, "ClmMed_Accident_AbsentMonth", $("ClmMed_Accident_AbsentMonth").value);        
+  safeSetText(form, "ClmMed_Accident_ReturnMonth", $("ClmMed_Accident_ReturnMonth").value);
+  safeSetText(form, "ClmMed_Accident_AbsentYear", $("ClmMed_Accident_AbsentYear").value);
+  safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);
+  safeSetText(form, "ClmMed_Insuredinfo_Email", $("ClmMed_Insuredinfo_Email").value);     
+
+ // Doctors     
+  safeSetText(form, "ClmMed_Dr_First_Date", $("ClmMed_Dr_First_Date").value);
+  safeSetText(form, "ClmMed_Dr_First_NameAdd", $("ClmMed_Dr_First_NameAdd").value);
+  safeSetText(form, "ClmMed_Dr_Others_NameAdd", $("ClmMed_Dr_Others_NameAdd").value);
+  safeSetText(form, "ClmMed_Dr_Others_Date", $("ClmMed_Dr_Others_Date").value); 
+  safeSetText(form, "ClmMed_Dr_Regular_Date", $("ClmMed_Dr_Regular_Date").value);
+  safeSetText(form, "ClmMed_Dr_Regular_NameAdd", $("ClmMed_Dr_Regular_NameAdd").value);
+  safeSetText(form, "ClmMed_Dr_5yrs_Date", $("ClmMed_Dr_5yrs_Date").value);
+  safeSetText(form, "ClmMed_Dr_5yrs_NameAdd", $("ClmMed_Dr_5yrs_NameAdd").value);  
+
+  // Other Policies
+  safeSetText(form, "ClmMed_OtherCover_CompName1", $("ClmMed_OtherCover_CompName1").value);
+  safeSetText(form, "ClmMed_OtherCover_CompName2", $("ClmMed_OtherCover_CompName2").value);
+  safeSetText(form, "ClmMed_OtherCover_CompName3", $("ClmMed_OtherCover_CompName3").value);
+  safeSetText(form, "ClmMed_OtherCover_CompName4", $("ClmMed_OtherCover_CompName4").value);
+  safeSetText(form, "ClmMed_OtherCover_PolicyNo1", $("ClmMed_OtherCover_PolicyNo1").value);
+  safeSetText(form, "ClmMed_OtherCover_PolicyNo2", $("ClmMed_OtherCover_PolicyNo2").value);     
+  safeSetText(form, "ClmMed_OtherCover_PolicyNo3", $("ClmMed_OtherCover_PolicyNo3").value);
+  safeSetText(form, "ClmMed_OtherCover_PolicyNo4", $("ClmMed_OtherCover_PolicyNo4").value);
+  safeSetText(form, "ClmMed_OtherCover_Date1", $("ClmMed_OtherCover_Date1").value);
+  safeSetText(form, "ClmMed_OtherCover_Date2", $("ClmMed_OtherCover_Date2").value);  
+  safeSetText(form, "ClmMed_OtherCover_Date3", $("ClmMed_OtherCover_Date3").value);
+  safeSetText(form, "ClmMed_OtherCover_Date4", $("ClmMed_OtherCover_Date4").value);
+  safeSetText(form, "ClmMed_OtherCover_FA1", $("ClmMed_OtherCover_FA1").value);
+  safeSetText(form, "ClmMed_OtherCover_FA2", $("ClmMed_OtherCover_FA2").value);
+  safeSetText(form, "ClmMed_OtherCover_FA3", $("ClmMed_OtherCover_FA3").value);
+  safeSetText(form, "ClmMed_OtherCover_FA4", $("ClmMed_OtherCover_FA4").value);   
+
+   // E Banking
+  safeSetText(form, "ClmMed_EBank_Name", $("ClmMed_EBank_Name").value);
+  safeSetText(form, "ClmMed_EBank_NIRC", $("ClmMed_EBank_NIRC").value);
+  safeSetText(form, "ClmMed_EBank_AccNo", $("ClmMed_EBank_AccNo").value);
+  safeSetText(form, "ClmMed_EBank_Bank", $("ClmMed_EBank_Bank").value);     
+
+   // Signing Details
+  safeSetText(form, "ClmMed_Sign_Witness_Name", $("ClmMed_Sign_Witness_Name").value);
+  safeSetText(form, "ClmMed_Sign_Witness_NIRC", $("ClmMed_Sign_Witness_NIRC").value);
+  safeSetText(form, "ClmMed_Sign_Witness_Date", $("ClmMed_Sign_Witness_Date").value);
+  safeSetText(form, "ClmMed_Sign_Witness_Mobile", $("ClmMed_Sign_Witness_Mobile").value);
+  safeSetText(form, "ClmMed_Sign_PO_Name", $("ClmMed_Sign_PO_Name").value);          
+  safeSetText(form, "ClmMed_Sign_PO_NIRC", $("ClmMed_Sign_PO_NIRC").value);
+  safeSetText(form, "ClmMed_Sign_PO_Date", $("ClmMed_Sign_PO_Date").value);     
+  safeSetText(form, "ClmMed_Sign_Relationship", $("ClmMed_Sign_Relationship").value);
+  safeSetText(form, "ClmMed_Sign_Relationship_Mobile", $("ClmMed_Sign_Relationship_Mobile").value);
 
    // Embed Signatures (Note: 0-indexed page numbering)
     // For Page 1 use 0, Page 2 use 1, Page 3 use 2
     const targetPageIndex = 3; // Adjust this index to match the target page in your PDF template
 
-    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 50,  y: 240, factor: 0.50 });
-    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 420, y: 240, factor: 0.50 });    
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 370,  y: 200, factor: 0.50 });
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 70, y: 200, factor: 0.50 });    
 
-
-    // FILL FORM FIELDS FROM LOCALSTORAGE HERE
-const fieldNames = [
-  "ClmMed_Claimtype_Amt",
-  "ClmMed_Insuredinfo_Name",
-  "ClmMed_Insuredinfo_NIRC", 
-  "ClmMed_Insuredinfo_Mobile",
-  "ClmMed_Insuredinfo_Email",
-  "ClmMed_Insuredinfo_Add",
-  "ClmMed_Insuredinfo_Occupation",
-  "ClmMed_Insuredinfo_Duties",
-  "ClmMed_Insuredinfo_Employer",
-  "ClmMed_Insuredinfo_EmployerAdd",
-  "ClmMed_POinfo_Name",
-  "ClmMed_POinfo_NIRC",
-  "ClmMed_POinfo_Mobile",
-  "ClmMed_POinfo_Email",
-  "ClmMed_POinfo_Add",
-  "ClmMed_Illness_Nature",
-  "ClmMed_Illness_Sympton",
-  "ClmMed_Illness_Diagnosis_Month",
-  "ClmMed_Illness_Diagnosis_Year",
-  "ClmMed_Illness_Onset_Month",
-  "ClmMed_Illness_Diagnosis_Day",
-  "ClmMed_Accident_Day",
-  "ClmMed_Accident_Month",
-  "ClmMed_Illness_Onset_Year",
-  "ClmMed_Accident_Time",
-  "ClmMed_Accident_AM",
-  "ClmMed_Accident_PM",
-  "ClmMed_Accident_Place",
-  "ClmMed_Accident_How",
-  "ClmMed_Accident_Injury",
-  "ClmMed_Illness_Onset_Day",
-  "ClmMed_Accident_AbsentDay",
-  "ClmMed_Accident_Year",
-  "ClmMed_Accident_ReturnDay",
-  "ClmMed_Accident_AbsentMonth",
-  "ClmMed_Accident_ReturnMonth",
-  "ClmMed_Accident_AbsentYear",
-  "ClmMed_Accident_ReturnYear",
-  "ClmMed_Dr_First_Date",
-  "ClmMed_Dr_First_NameAdd",
-  "ClmMed_Dr_Others_NameAdd",
-  "ClmMed_Dr_Others_Date",
-  "ClmMed_Dr_Regular_Date",
-  "ClmMed_Dr_Regular_NameAdd",
-  "ClmMed_Dr_5yrs_Date",
-  "ClmMed_Dr_5yrs_NameAdd",
-  "ClmMed_OtherCover_CompName1",
-  "ClmMed_OtherCover_CompName2",
-  "ClmMed_OtherCover_CompName3",
-  "ClmMed_OtherCover_CompName4",
-  "ClmMed_OtherCover_PolicyNo1",
-  "ClmMed_OtherCover_PolicyNo2",
-  "ClmMed_OtherCover_PolicyNo3",
-  "ClmMed_OtherCover_PolicyNo4",
-  "ClmMed_OtherCover_Date1",
-  "ClmMed_OtherCover_Date2",
-  "ClmMed_OtherCover_Date3",
-  "ClmMed_OtherCover_Date4",
-  "ClmMed_OtherCover_FA1",
-  "ClmMed_OtherCover_FA2",
-  "ClmMed_OtherCover_FA3",
-  "ClmMed_OtherCover_FA4",
-  "ClmMed_EBank_Name",
-  "ClmMed_EBank_NIRC",
-  "ClmMed_EBank_AccNo",
-  "ClmMed_EBank_Bank",
-  "ClmMed_Sign_Witness_Name",
-  "ClmMed_Sign_Witness_NIRC",
-  "ClmMed_Sign_Witness_Date",
-  "ClmMed_Sign_Witness_Mobile",
-  "ClmMed_Sign_PO_Name",
-  "ClmMed_Sign_PO_NIRC",
-  "ClmMed_Sign_PO_Date",
-  "ClmMed_Sign_Relationship",
-  "ClmMed_Sign_Relationship_Mobile"
-];
-
-fieldNames.forEach(fieldName => {
-  // If the UI section containing this field is currently unticked, skip it.
-  if (!shouldIncludeFieldByUI(fieldName)) return;
-
-  const value = localStorage.getItem(fieldName);
-  safeSetField(form, fieldName, value);
-});
 
 /* ---------- WRITE BANK ACCOUNT TYPE TO PDF CHECKBOXES ---------- */
 function writeBankAccountType(form) {
@@ -2187,19 +2183,19 @@ writeBankAccountType(form);
     const url = URL.createObjectURL(blob);
 
     // 4. Construct output filename with policy number fallback
-    const policyVal = getValue("Nom_PolicyNumber");
+    const policyVal = getValue("ClmMed_Basicinfo_PolicyNo1");
     let policyNum = "NEW";
 
     if (policyVal.trim() !== "") {
       policyNum = policyVal.trim().replace(/[^a-z0-9]/gi, '_');
     } else {
-      const savedPolicy = localStorage.getItem("Nom_PolicyNumber");
+      const savedPolicy = localStorage.getItem("ClmMed_Basicinfo_PolicyNo1");
       if (savedPolicy && savedPolicy.trim() !== "") {
         policyNum = savedPolicy.trim().replace(/[^a-z0-9]/gi, '_');
       }
     }
 
-    const finalFileName = `${policyNum}_Nomination.pdf`;
+    const finalFileName = `${policyNum}_Medical_Accidental_Claim.pdf`;
 
     // 5. Execute action (View in new tab OR Force Download)
     if (action === 'view') {
