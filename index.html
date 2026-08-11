@@ -1117,6 +1117,7 @@ label:has(.time-input-group)::first-line { font-weight: 500; }
 }
   
 /* ---------- CONFIG ---------- */
+const FORM_ID = "ClmMed";    
 const PDF_FILENAME = "Medical and Accident Claim_Claimant's Statement_LF5191_202305_fillable.pdf";
 
 // ---------- Ilness/Accident SECTION CONTROL CONFIG (Show/Hide Section) ----------
@@ -1789,148 +1790,176 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-/* ---------- SIGNATURE MODAL LOGIC (Owner + Payor) with HiDPI scaling ---------- */
+/* ---------- Signature Engine ---------- */
 let sigTarget = null;
 const sigModal = $("sigModal");
 const sigCanvas = $("sigCanvas");
-const sigCtx = sigCanvas.getContext("2d");
-let drawing = false;
-let scaleX = 1, scaleY = 1;
+const sigCtx = sigCanvas ? sigCanvas.getContext("2d") : null;
 
-/* Resize canvas to look crisp on any screen size & DPR */
-function resizeSigCanvas(){
-  const dpr = window.devicePixelRatio || 1;
-  const cssWidth = sigCanvas.clientWidth || sigCanvas.parentElement.clientWidth || 560;
-  const cssHeight = sigCanvas.clientHeight || 220;
-  sigCanvas.width = Math.max(1, Math.floor(cssWidth * dpr));
-  sigCanvas.height = Math.max(1, Math.floor(cssHeight * dpr));
-  sigCtx.setTransform(1,0,0,1,0,0); // reset
-  sigCtx.scale(dpr, dpr);
-  sigCtx.lineWidth = 2;
-  sigCtx.lineCap = "round";
-  sigCtx.strokeStyle = "#000";
-  scaleX = sigCanvas.width / (sigCanvas.getBoundingClientRect().width || cssWidth);
-  scaleY = sigCanvas.height / (sigCanvas.getBoundingClientRect().height || cssHeight);
-  // White background (prevents transparent PNG on PDFs)
-  //sigCtx.fillStyle = "#fff";
-  //sigCtx.fillRect(0,0,sigCanvas.width/scaleX, sigCanvas.height/scaleY);
+// Initialize SignaturePad
+const signaturePad = new SignaturePad(sigCanvas, {
+  minWidth: 0.7,
+  maxWidth: 2.5,
+  penColor: "black",
+  backgroundColor: "rgba(0,0,0,0)"
+});
+
+function resizeCanvas() {
+  if (!sigCanvas) return;
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  const formId = typeof FORM_ID !== "undefined" ? FORM_ID : "ClmMed";
+  const storageKey = sigTarget ? `sig_${formId}_${sigTarget}` : null;
+  const savedFromStorage = storageKey ? localStorage.getItem(storageKey) : null;
+
+  sigCanvas.width = sigCanvas.offsetWidth * ratio;
+  sigCanvas.height = sigCanvas.offsetHeight * ratio;
+  sigCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  signaturePad.clear();
+
+  if (savedFromStorage) {
+    const img = new Image();
+    img.onload = () => sigCtx.drawImage(img, 0, 0, sigCanvas.offsetWidth, sigCanvas.offsetHeight);
+    img.src = savedFromStorage;
+  }
 }
 
-function openSig(target){
-  sigTarget = target; // 'simple_owner' | 'simple_witness' | 'simple_assignee' | 'simple_oldsig'| 'simple_newsig'
-
-if (target === 'simple_owner') {
-  $("sigModalTitle").textContent = "Sign: Policy Owner";
-} else if (target === 'simple_witness') {
-  $("sigModalTitle").textContent = "Sign: Witness";
-} else if (target === 'simple_assignee') {
-  $("sigModalTitle").textContent = "Sign: Trustee";
-}
-
-  sigModal.style.display = "block";
-  sigModal.setAttribute("aria-hidden", "false");
-
-  // Next frame: ensure layout settled then resize canvas
-  requestAnimationFrame(()=>{
-    resizeSigCanvas();
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+function openSig({ role, title }) {
+  sigTarget = role;
+  if ($("sigModalTitle")) $("sigModalTitle").textContent = title || `Sign: ${role}`;
   
-    // If there is an existing signature, draw it to current canvas size
-    const existing = localStorage.getItem("sig_"+target);
-    if (existing){
-      const img = new Image();
-      img.onload = ()=>{
-        // cover the canvas area with existing image
-        sigCtx.drawImage(img, 0, 0, sigCanvas.width/scaleX, sigCanvas.height/scaleY);
-      };
-      img.src = existing;
-    }
+  if (sigModal) {
+    sigModal.style.display = "block";
+    sigModal.setAttribute("aria-hidden", "false");
+  }
+  
+  requestAnimationFrame(() => {
+    resizeCanvas();
   });
 }
-$("sigClear").addEventListener("click", ()=>{
-  sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height);
-  // Repaint white bg in CSS pixels
-  //sigCtx.fillStyle="#fff"; sigCtx.fillRect(0,0,sigCanvas.width/scaleX, sigCanvas.height/scaleY);
-});
-$("sigCancel").addEventListener("click", closeSigModal);
-function closeSigModal(){
-  sigModal.style.display = "none";
-  sigModal.setAttribute("aria-hidden", "true");
+
+function closeSigModal() {
+  if (sigModal) {
+    sigModal.style.display = "none";
+    sigModal.setAttribute("aria-hidden", "true");
+  }
   sigTarget = null;
 }
-$("sigDone").addEventListener("click", ()=>{
-  if(!sigTarget) return;
+
+// Modal Action Handlers
+$("sigDone")?.addEventListener("click", () => {
+  if (!sigTarget || signaturePad.isEmpty()) return;
+
+  const formId = typeof FORM_ID !== "undefined" ? FORM_ID : "ClmMed";
   const dataURL = sigCanvas.toDataURL("image/png");
-  localStorage.setItem("sig_"+sigTarget, dataURL);
-  const preview = $("preview_"+sigTarget);
-  preview.innerHTML = `<img alt="Signature ${sigTarget}" src="${dataURL}">`;
+  
+  localStorage.setItem(`sig_${formId}_${sigTarget}`, dataURL);
+  
+  const block = document.querySelector(`[data-sig-role="${sigTarget}"]`);
+  const previewDiv = block?.querySelector("[data-sig-preview]");
+  if (previewDiv) {
+    previewDiv.innerHTML = `<img src="${dataURL}" style="max-height:100%; width:auto; pointer-events:none;" alt="Signature ${sigTarget}">`;
+  }
   closeSigModal();
 });
 
-/* Drawing (mouse + touch) with coordinate conversion */
-function getPos(e){
-  const rect = sigCanvas.getBoundingClientRect();
-  if(e.touches && e.touches[0]){
-    return { x: (e.touches[0].clientX - rect.left), y: (e.touches[0].clientY - rect.top) };
-  }
-  return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
-}
-function startDraw(e){
-  drawing = true;
-  sigCtx.beginPath();
-  const {x,y}=getPos(e);
-  sigCtx.moveTo(x, y);
-  e.preventDefault?.();
-}
-function endDraw(){ drawing = false; sigCtx.beginPath(); }
-function moveDraw(e){
-  if(!drawing) return;
-  const {x,y} = getPos(e);
-  sigCtx.lineTo(x, y);
-  sigCtx.stroke();
-  sigCtx.beginPath();
-  sigCtx.moveTo(x, y);
-  e.preventDefault?.();
-}
-sigCanvas.addEventListener("mousedown", startDraw);
-sigCanvas.addEventListener("mousemove", moveDraw);
-window.addEventListener("mouseup", endDraw);
-sigCanvas.addEventListener("touchstart", startDraw, {passive:false});
-sigCanvas.addEventListener("touchmove", moveDraw, {passive:false});
-sigCanvas.addEventListener("touchend", endDraw);
-window.addEventListener("resize", ()=> {
-  // Only resize when modal is open to avoid reflow glitches
-  if(sigModal.getAttribute("aria-hidden")==="false"){ 
-    const img = new Image();
-    img.onload = ()=>{
-      resizeSigCanvas();
-      sigCtx.drawImage(img, 0, 0, sigCanvas.width/scaleX, sigCanvas.height/scaleY);
-    };
-    img.src = sigCanvas.toDataURL("image/png");
-  }
-});
+$("sigClear")?.addEventListener("click", () => signaturePad.clear());
+$("sigCancel")?.addEventListener("click", closeSigModal);
+window.addEventListener("resize", resizeCanvas);
 
-/* Clear preview buttons + Restore previews on load */
-$("clearPreview_Simple_Owner").addEventListener("click", ()=>{
-  localStorage.removeItem("sig_simple_owner");
-  $("preview_simple_owner").innerHTML = `<span>Tap to Sign (Policyowner/Assignee)</span>`;
-});
-$("clearPreview_Simple_Witness").addEventListener("click", ()=>{
-  localStorage.removeItem("sig_simple_witness");
-  $("preview_simple_witness").innerHTML = `<span>Tap to Sign (Witness)</span>`;
-});
-$("clearPreview_Simple_Assignee").addEventListener("click", ()=>{
-  localStorage.removeItem("sig_simple_assignee");
-  $("preview_simple_assignee").innerHTML = `<span>Tap to Sign (Trustee/Nominee)</span>`;
-});
+/* ---------- Initialize Signature Fields ---------- */
+function initSignatureFields() {
+  const formId = typeof FORM_ID !== "undefined" ? FORM_ID : "ClmMed";
 
-window.addEventListener("DOMContentLoaded", ()=>{
-  ["owner","witness","assignee"].forEach(role=>{
-    const saved = localStorage.getItem("sig_simple_"+role);
-    if(saved){ $("preview_simple_"+role).innerHTML = `<img alt="Signature ${role}" src="${saved}">`; }
+  document.querySelectorAll("[data-sig-role]").forEach((block) => {
+    const role = block.dataset.sigRole;
+    const title = block.dataset.sigTitle || `Sign: ${role}`;
+    const previewEl = block.querySelector("[data-sig-preview]");
+    const clearBtn = block.querySelector("[data-sig-clear]");
+    const defaultText = `<span>Tap to Sign (${role.charAt(0).toUpperCase() + role.slice(1)})</span>`;
+
+    if (previewEl) {
+      previewEl.style.cursor = "pointer";
+      previewEl.addEventListener("click", (e) => {
+        e.preventDefault();
+        openSig({ role, title });
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        localStorage.removeItem(`sig_${formId}_${role}`);
+        if (previewEl) previewEl.innerHTML = defaultText;
+      });
+    }
+
+    const saved = localStorage.getItem(`sig_${formId}_${role}`) || localStorage.getItem(`sig_${role}`);
+    if (saved && previewEl) {
+      previewEl.innerHTML = `<img src="${saved}" style="max-height:100%; width:auto; pointer-events:none;" alt="Signature ${role}">`;
+    }
   });
-});
+}
 
+/* ---------- PDF Embedding Engine ---------- */
+async function embedSignatureToPdf(pdfDoc, pageIndex, options) {
+  const { role, x, y, factor = 0.40 } = options;
+
+  const formId = typeof FORM_ID !== "undefined" ? FORM_ID : "ClmMed";
+  const primaryKey = `sig_${formId}_${role}`;
+  
+  let sigDataUri = localStorage.getItem(primaryKey) 
+                || localStorage.getItem(`sig_${role}`) 
+                || localStorage.getItem(role);
+
+  if (!sigDataUri || !sigDataUri.startsWith("data:image/png")) {
+    console.warn(`No valid PNG signature found for role: ${role} (key tried: ${primaryKey})`);
+    return;
+  }
+
+  try {
+    const img = await pdfDoc.embedPng(sigDataUri);
+    const originalSize = img.size();
+
+    const baseWidth = 250;
+    const aspectRatio = originalSize.width / originalSize.height;
+    const renderWidth = baseWidth * factor;
+    const renderHeight = (baseWidth / aspectRatio) * factor;
+
+    const pages = pdfDoc.getPages();
+    const targetPage = pages[pageIndex];
+
+    if (targetPage) {
+      targetPage.drawImage(img, {
+        x: x,
+        y: y,
+        width: renderWidth,
+        height: renderHeight
+      });
+    } else {
+      console.error(`Page index ${pageIndex} does not exist in the PDF template.`);
+    }
+  } catch (err) {
+    console.error(`Error embedding signature for role ${role}:`, err);
+  }
+}
+
+/* ---------- AUTO INITIALIZE BOTH ON LOAD ---------- */
+function initApp() {
+  if (typeof loadFromLocalStorage === "function") {
+    loadFromLocalStorage();
+  }
+  if (typeof initSignatureFields === "function") {
+    initSignatureFields();
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
+/* ---------- (END) Signature Engine ---------- */    
 
 /* ---------- FINAL: RUN AUTO-LINK AFTER autoBindSave RESTORES VALUES ---------- */
 window.addEventListener("DOMContentLoaded", () => {
@@ -1977,43 +2006,74 @@ if (savedType) {
   if (el) el.checked = true;
 }
 
-/* ---------- GENERATE PDF ---------- */
-async function fillPDF(){
+/* ---------- Generate PDF ---------- */
+async function fillPDF(templateFileName, action = 'download') {
+  // Grab action buttons to disable them during generation
+  const actionButtons = document.querySelectorAll('.actions button');
+  actionButtons.forEach(btn => btn.disabled = true);
+
+  // Helper function to safely fetch input DOM values without crashing on missing elements
+  const getValue = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value : "";
+  };
+
+  const getChecked = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.checked : false;
+  };
+
   try {
-    $("generate").disabled = true;
+    // 1. Fetch template PDF
+    const response = await fetch(templateFileName);
+    if (!response.ok) {
+      throw new Error(`Failed to load template file: ${templateFileName}`);
+    }
+    const existingPdfBytes = await response.arrayBuffer();
 
-    const res = await fetch(PDF_FILENAME);
-    if (!res.ok) throw new Error("Cannot load PDF: " + PDF_FILENAME);
-    const bytes = await res.arrayBuffer();
-    const pdfDoc = await PDFLib.PDFDocument.load(bytes);
-    const form = pdfDoc.getForm();
+    // 2. Load PDF document & get interactive form
+    const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+    const form = pdfDoc.getForm(); // <-- FIXED: Form initialization added
 
-    const pages = pdfDoc.getPages();
-    const page = pages[3]; // use 4th page
+   // Section A - Policy Details 
+  safeSetText(form, "ClmMed_Basicinfo_PolicyNo1", $("ClmMed_Basicinfo_PolicyNo1").value);
+  safeSetText(form, "ClmMed_Basicinfo_PolicyNo2", $("ClmMed_Basicinfo_PolicyNo2").value);
+  safeSetText(form, "ClmMed_Basicinfo_PolicyNo3", $("ClmMed_Basicinfo_PolicyNo3").value);
+  safeSetText(form, "ClmMed_Basicinfo_PolicyNo4", $("ClmMed_Basicinfo_PolicyNo4").value);
+  safeSetText(form, "ClmMed_Basicinfo_Day", $("ClmMed_Basicinfo_Day").value);
+  safeSetText(form, "ClmMed_Basicinfo_Month", $("ClmMed_Basicinfo_Month").value);
+  safeSetText(form, "ClmMed_Basicinfo_Year", $("ClmMed_Basicinfo_Year").value);
+  safeSetText(form, "ClmMed_Basicinfo_Agent", $("ClmMed_Basicinfo_Agent").value);
+  safeSetText(form, "ClmMed_Basicinfo_Mobile", $("ClmMed_Basicinfo_Mobile").value);  
+      
+  // Section A - Claim type 
+  safeCheck(form, "ClmMed_Claimtype_Hosp", $("ClmMed_Claimtype_Hosp").checked);
+  safeCheck(form, "ClmMed_Claimtype_PrePost", $("ClmMed_Claimtype_PrePost").checked);
+  safeCheck(form, "ClmMed_Claimtype_HospBen", $("ClmMed_Claimtype_HospBen").checked);
+  safeCheck(form, "ClmMed_Claimtype_OpDengue", $("ClmMed_Claimtype_OpDengue").checked);
+  safeCheck(form, "ClmMed_Claimtype_OpKidney", $("ClmMed_Claimtype_OpKidney").checked);
+  safeCheck(form, "ClmMed_Claimtype_AccInjury", $("ClmMed_Claimtype_AccInjury").checked);
+  safeCheck(form, "ClmMed_Claimtype_AccIndemnity", $("ClmMed_Claimtype_AccIndemnity").checked);
+  safeCheck(form, "ClmMed_Claimtype_Others", $("ClmMed_Claimtype_Others").checked);
+  safeSetText(form, "ClmMed_Claimtype_Others_Text", $("ClmMed_Claimtype_Others_Text").value);   
+  safeSetText(form, "ClmMed_Claimtype_Amt", $("ClmMed_Claimtype_Amt").value);      
+
+  // Section A - Insured     
+  safeSetText(form, "Nom_Nominee_Trustee_NIRC", $("Nom_Nominee_Trustee_NIRC").value);
+  safeSetText(form, "Nom_Nominee_Witness_Name", $("Nom_Nominee_Witness_Name").value);
+  safeSetText(form, "Nom_Nominee_Witness_NIRC", $("Nom_Nominee_Witness_NIRC").value);
+  safeSetText(form, "Nom_Nominee_Witness_Mobile", $("Nom_Nominee_Witness_Mobile").value);      
+
+   // Embed Signatures (Note: 0-indexed page numbering)
+    // For Page 1 use 0, Page 2 use 1, Page 3 use 2
+    const targetPageIndex = 3; // Adjust this index to match the target page in your PDF template
+
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 50,  y: 240, factor: 0.50 });
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 420, y: 240, factor: 0.50 });    
 
 
     // FILL FORM FIELDS FROM LOCALSTORAGE HERE
 const fieldNames = [
-  "ClmMed_Basicinfo_PolicyNo1",
-  "ClmMed_Basicinfo_PolicyNo2",
-  "ClmMed_Basicinfo_PolicyNo3",
-  "ClmMed_Basicinfo_PolicyNo4",
-  "ClmMed_Basicinfo_Day",
-  "ClmMed_Basicinfo_Month",
-  "ClmMed_Basicinfo_Year",
-  "ClmMed_Basicinfo_Agent",
-  "ClmMed_Basicinfo_Agency",
-  "ClmMed_Basicinfo_Mobile",
-  "ClmMed_Claimtype_Hosp",
-  "ClmMed_Claimtype_PrePost",
-  "ClmMed_Claimtype_HospBen",
-  "ClmMed_Claimtype_OpDengue",
-  "ClmMed_Claimtype_OpKidney",
-  "ClmMed_Claimtype_Home",
-  "ClmMed_Claimtype_AccInjury",
-  "ClmMed_Claimtype_AccIndemnity",
-  "ClmMed_Claimtype_Others",
-  "ClmMed_Claimtype_Others_Text",
   "ClmMed_Claimtype_Amt",
   "ClmMed_Insuredinfo_Name",
   "ClmMed_Insuredinfo_NIRC", 
@@ -2119,138 +2179,49 @@ function writeBankAccountType(form) {
 
 writeBankAccountType(form);
     
-    /* --------- SIGNATURE IMAGE EMBEDDING (embedPng + drawImage) --------- */
-
-// Owner signature FillPDF
-const sig_Simple_Owner = localStorage.getItem("sig_simple_owner");
-if (sig_Simple_Owner) {
-  try {
-    const img_Simple_Owner = await pdfDoc.embedPng(sig_Simple_Owner);
-    const { width, height } = img_Simple_Owner.size();
-
-    const previewEl = document.getElementById("preview_simple_owner");
-    const boxW = previewEl.offsetWidth;
-    const boxH = previewEl.offsetHeight;
-
-    const scale = Math.min(boxW / width, boxH / height);
-    let drawW = width * scale;
-    let drawH = height * scale;
-
-    const factor = 0.40;    // % scale
-    const posX = 370;         // X position on PDF
-    const posY = 200;        // Y position on PDF
-
-    drawW *= factor;
-    drawH *= factor;
-
-    page.drawImage(img_Simple_Owner, {
-      x: posX,
-      y: posY,
-      width: drawW,
-      height: drawH
-    });
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-// Witness signature FillPDF
-const sig_Simple_Witness = localStorage.getItem("sig_simple_witness");
-if (sig_Simple_Witness) {
-  try {
-    const img_Simple_Witness = await pdfDoc.embedPng(sig_Simple_Witness);
-    const { width, height } = img_Simple_Witness.size();
-
-    const previewEl = document.getElementById("preview_simple_witness");
-    const boxW = previewEl.offsetWidth;
-    const boxH = previewEl.offsetHeight;
-
-    const scale = Math.min(boxW / width, boxH / height);
-    let drawW = width * scale;
-    let drawH = height * scale;
-
-    const factor = 0.40;    // % scale
-    const posX = 70;         // X position on PDF
-    const posY = 200;        // Y position on PDF
-
-    drawW *= factor;
-    drawH *= factor;
-
-    page.drawImage(img_Simple_Witness, {
-      x: posX,
-      y: posY,
-      width: drawW,
-      height: drawH
-    });
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-
-// Assignee signature FillPDF
-const sig_Simple_Assignee = localStorage.getItem("sig_simple_assignee");
-if (sig_Simple_Assignee) {
-  try {
-    const img_Simple_Assignee = await pdfDoc.embedPng(sig_Simple_Assignee);
-    const { width, height } = img_Simple_Assignee.size();
-
-    const previewEl = document.getElementById("preview_simple_assignee");
-    const boxW = previewEl.offsetWidth;
-    const boxH = previewEl.offsetHeight;
-
-    const scale = Math.min(boxW / width, boxH / height);
-    let drawW = width * scale;
-    let drawH = height * scale;
-
-    const factor = 0.40;    // % scale
-    const posX = 230;         // X position on PDF
-    const posY = 620;        // Y position on PDF
-
-    drawW *= factor;
-    drawH *= factor;
-
-    page.drawImage(img_Simple_Assignee, {
-      x: posX,
-      y: posY,
-      width: drawW,
-      height: drawH
-    });
-  } catch (e) {
-    console.error(e);
-  }
-}
+    // Flatten form fields before saving
+    //form.flatten();
     
-    
-    // Save & download FillPDF
-    // 1. Save & get bytes
     const pdfBytes = await pdfDoc.save();
-
-    // 2. Extract Policy Number ONLY
-    const policyInput = document.getElementById('ClmMed_Basicinfo_PolicyNo1');
-    const policyNum = policyInput ? policyInput.value.trim() : "";
-
-    // 3. Format the filename (PolicyNumber_FormType.pdf)
-    const safePolicy = policyNum.replace(/[^a-z0-9]/gi, '_') || "NEW";
-    const finalFileName = `${safePolicy}_Medical_Accidental_Claim.pdf`;
-
-    // 4. Trigger download
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = finalFileName; 
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
 
-    setTimeout(() => URL.revokeObjectURL(url), 2500);
+    // 4. Construct output filename with policy number fallback
+    const policyVal = getValue("Nom_PolicyNumber");
+    let policyNum = "NEW";
 
-  } catch(err){
+    if (policyVal.trim() !== "") {
+      policyNum = policyVal.trim().replace(/[^a-z0-9]/gi, '_');
+    } else {
+      const savedPolicy = localStorage.getItem("Nom_PolicyNumber");
+      if (savedPolicy && savedPolicy.trim() !== "") {
+        policyNum = savedPolicy.trim().replace(/[^a-z0-9]/gi, '_');
+      }
+    }
+
+    const finalFileName = `${policyNum}_Nomination.pdf`;
+
+    // 5. Execute action (View in new tab OR Force Download)
+    if (action === 'view') {
+      window.open(url, '_blank');
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = finalFileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    // 6. Clean up Blob URL memory leak after 5 seconds
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+  } catch (err) {
+    console.error("Critical PDF Error:", err);
     alert("PDF generation failed: " + (err.message || err));
-    console.error(err);
   } finally {
-    $("generate").disabled = false;
+    // Re-enable action buttons
+    actionButtons.forEach(btn => btn.disabled = false);
   }
 }
 
