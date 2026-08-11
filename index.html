@@ -2207,14 +2207,12 @@ async function fillPDF(templateFileName, action = 'download') {
 
 /* ---------- RESET ALL DATA (ClmMed / LF5191) ---------- */
 function resetAllData() {
-  if (!confirm("Are you sure you want to reset the form? All saved data will be cleared.")) {
-    return;
-  }
+  if (!confirm("Are you sure you want to reset the form? All saved data will be cleared.")) return;
 
-  // 1. Clear saved auto-fill data from local storage
+  // Clear localStorage
   localStorage.clear();
 
-  // 2. Clear all input fields, drop-downs, and textareas
+  // Reset inputs
   document.querySelectorAll("input, select, textarea").forEach(el => {
     if (el.type === "checkbox" || el.type === "radio") {
       el.checked = false;
@@ -2223,21 +2221,16 @@ function resetAllData() {
     }
   });
 
-  // 3. Reset Signature Previews back to default state
+  // Reset Signature Previews
   document.querySelectorAll("[data-sig-role]").forEach(block => {
     const role = block.dataset.sigRole;
     const previewEl = block.querySelector("[data-sig-preview]");
     if (previewEl) {
-      // Formats role nicely (e.g. "claimant" -> "Claimant")
-      const formattedRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Signer";
-      previewEl.innerHTML = `<span>Tap to Sign (${formattedRole})</span>`;
+      previewEl.innerHTML = `<span>Tap to Sign (${role.charAt(0).toUpperCase() + role.slice(1)})</span>`;
     }
   });
 
-  // 4. Update the auto-save status indicator UI
-  if (typeof showSaveStatus === "function") {
-    showSaveStatus();
-  }
+  if (typeof showSaveStatus === "function") showSaveStatus();
 }
 
 
