@@ -1929,9 +1929,18 @@ async function fillPDF(templateFileName, action = 'download') {
   actionButtons.forEach(btn => btn.disabled = true);
 
   // Helper function to safely fetch input DOM values without crashing on missing elements
+  // Updated getValue helper that bridges DOM inputs AND localStorage combined fields
   const getValue = (id) => {
     const el = document.getElementById(id);
-    return el ? el.value : "";
+    
+    // 1. If it's a real HTML input/textarea/select with a value, use it
+    if (el && el.value !== undefined && el.value.trim() !== "") {
+      return el.value;
+    }
+    
+    // 2. If it's a date/time container (div) or missing from DOM, fetch from localStorage
+    const saved = localStorage.getItem(id);
+    return saved ? saved : "";
   };
 
   const getChecked = (id) => {
