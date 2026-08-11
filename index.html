@@ -1637,70 +1637,109 @@ function autoLinkPersonFields(config) {
 }
 
 
-/* ---------- Date Input Helper : Combine into ONE string  ---------- */
+/* ---------- Date Input Helper : Combine into ONE string ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  // Target only date groups that have data-combine="true"
   const combinedGroups = document.querySelectorAll('.date-group[data-combine="true"]');
 
   combinedGroups.forEach(group => {
     const fieldId = group.dataset.field; // e.g. ClmMed_Dr_First_Date
+    if (!fieldId) return;
+
     const inputs = group.querySelectorAll(".date-input");
 
-    // Restore saved combined date
+    // Helper to sync combined string to DOM + localStorage
+    const updateCombinedDate = () => {
+      const [d, m, y] = Array.from(inputs).map(i => i.value.trim());
+      const combined = (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
+
+      // 1. Save to localStorage
+      if (combined) {
+        localStorage.setItem(fieldId, combined);
+      } else {
+        localStorage.removeItem(fieldId);
+      }
+
+      // 2. Sync directly to hidden DOM input if it exists
+      const targetEl = document.getElementById(fieldId);
+      if (targetEl && targetEl.tagName === "INPUT") {
+        targetEl.value = combined;
+      }
+    };
+
+    // Restore saved combined date on load
     const saved = localStorage.getItem(fieldId);
     if (saved) {
-      const [d, m, y] = saved.split("/");
-      if (inputs[0]) inputs[0].value = d || "";
-      if (inputs[1]) inputs[1].value = m || "";
-      if (inputs[2]) inputs[2].value = y || "";
+      const parts = saved.split("/");
+      if (inputs[0]) inputs[0].value = parts[0] || "";
+      if (inputs[1]) inputs[1].value = parts[1] || "";
+      if (inputs[2]) inputs[2].value = parts[2] || "";
+      updateCombinedDate();
     }
 
     // Save combined value on any input change
     inputs.forEach(input => {
-      input.addEventListener("input", () => {
-        const [d, m, y] = Array.from(inputs).map(i => i.value.trim());
-        const combined = [d, m, y].filter(Boolean).join("/");
-        localStorage.setItem(fieldId, combined);
-      });
+      input.addEventListener("input", updateCombinedDate);
+      input.addEventListener("change", updateCombinedDate);
     });
   });
 });
 
-/* ---------- Time Input Helper : Combine into ONE string  ---------- */
+/*/* ---------- Time Input Helper : Combine into ONE string ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   const timeGroups = document.querySelectorAll(".time-input-group[data-field]");
 
   timeGroups.forEach(group => {
     const fieldId = group.dataset.field; // e.g. ClmMed_Accident_Time
+    if (!fieldId) return;
+
     const hourInput = group.querySelector('input[placeholder="HH"]');
     const minuteInput = group.querySelector('input[placeholder="MM"]');
     const ampmSelect = group.querySelector("select");
 
-    // --- Restore saved time ---
+    if (!hourInput || !minuteInput || !ampmSelect) return;
+
+    const updateCombinedTime = () => {
+      const rawH = hourInput.value.trim();
+      const rawM = minuteInput.value.trim();
+      const ampm = ampmSelect.value;
+
+      let combined = "";
+      if (rawH || rawM) {
+        const hh = rawH ? rawH.padStart(2, "0") : "00";
+        const mm = rawM ? rawM.padStart(2, "0") : "00";
+        combined = `${hh}:${mm} ${ampm}`.trim();
+      }
+
+      // 1. Save to localStorage
+      if (combined) {
+        localStorage.setItem(fieldId, combined);
+      } else {
+        localStorage.removeItem(fieldId);
+      }
+
+      // 2. Sync directly to hidden DOM input if it exists
+      const targetEl = document.getElementById(fieldId);
+      if (targetEl && targetEl.tagName === "INPUT") {
+        targetEl.value = combined;
+      }
+    };
+
+    // Restore saved time
     const saved = localStorage.getItem(fieldId);
     if (saved) {
-      // Expect "HH:MM AM" or "HH:MM PM"
       const [time, period] = saved.split(" ");
       if (time) {
         const [hh, mm] = time.split(":");
-        if (hourInput) hourInput.value = hh || "";
-        if (minuteInput) minuteInput.value = mm || "";
+        hourInput.value = hh || "";
+        minuteInput.value = mm || "";
       }
       if (ampmSelect) ampmSelect.value = period || "";
+      updateCombinedTime();
     }
 
-    // --- Save combined time on change ---
-    const saveTime = () => {
-      const hh = hourInput.value.trim().padStart(2, "0");
-      const mm = minuteInput.value.trim().padStart(2, "0");
-      const ampm = ampmSelect.value;
-      const combined = (hh || mm || ampm) ? `${hh}:${mm} ${ampm}`.trim() : "";
-      localStorage.setItem(fieldId, combined);
-    };
-
     [hourInput, minuteInput, ampmSelect].forEach(el => {
-      el.addEventListener("input", saveTime);
-      el.addEventListener("change", saveTime);
+      el.addEventListener("input", updateCombinedTime);
+      el.addEventListener("change", updateCombinedTime);
     });
   });
 });
