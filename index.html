@@ -1358,18 +1358,17 @@ function saveElValue(el){
 function autoBindSave(el) {
   const saved = localStorage.getItem(el.id);
 
-  // 1. Restore saved values (with UPPERCASE fix)
+  // Restore
   if (el.type === "checkbox") {
     if (saved !== null) el.checked = (saved === "true");
   } else if (el.type === "radio") {
     const savedRadioValue = localStorage.getItem(el.name);
     if (savedRadioValue) el.checked = (el.id === savedRadioValue);
   } else if (saved !== null) {
-    // Uppercase restored text unless it's an email
-    el.value = isEmailField(el.id) ? saved : saved.toUpperCase();
+    el.value = saved;
   }
 
-  // 2. Bind save & uppercase on typing
+  // Bind save
   if (el.tagName === "SELECT") {
     el.addEventListener("change", () => saveElValue(el));
   } else if (el.type === "checkbox") {
@@ -1386,17 +1385,10 @@ function autoBindSave(el) {
     });
   } else {
     el.addEventListener("input", () => {
-      if (!isEmailField(el.id)) {
-        // Preserve cursor position so typing in the middle doesn't break
-        const start = el.selectionStart;
-        const end = el.selectionEnd;
-
-        el.value = el.value.toUpperCase();
-
-        if (start !== null && end !== null) {
-          el.setSelectionRange(start, end);
-        }
-      }
+      // only uppercase if not in the email list
+     if (!isEmailField(el.id)) {
+  el.value = el.value.toUpperCase();
+}
       localStorage.setItem(el.id, el.value);
       showSaveStatus();
     });
