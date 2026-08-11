@@ -1367,26 +1367,6 @@ function shouldIncludeFieldByUI(fieldId) {
   return true;
 }
 
-/* ---------- ENFORCE TRUE RADIO BEHAVIOR ---------- */
-document.querySelectorAll("input.bank-type").forEach(el => {
-  el.addEventListener("change", () => {
-    // ensure only one is active
-    const conventional = $("ClmMed_EBank_Conventional");
-    const islamic = $("ClmMed_EBank_Islamic");
-
-    if (el.id === "ClmMed_EBank_Conventional") {
-      islamic.checked = false;
-    } else {
-      conventional.checked = false;
-    }
-
-    // sync to localStorage manually (radio groups need special handling)
-    if (el.checked) {
-      localStorage.setItem("Accounttype", el.id); // store the ID
-    }
-  });
-});
-
 
 /********************************************
  * BASIC INFO POLICY NO (1 input per entry)
