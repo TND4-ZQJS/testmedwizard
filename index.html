@@ -1705,6 +1705,26 @@ function safeCheck(form, name, checked) {
   }
 }
 
+/* ---------- WRITE BANK ACCOUNT TYPE TO PDF CHECKBOXES ---------- */
+function writeBankAccountType(form) {
+  const selected = localStorage.getItem("Accounttype"); // ID stored
+
+  const conventional = (selected === "ClmMed_EBank_Conventional");
+  const islamic = (selected === "ClmMed_EBank_Islamic");
+
+  try {
+    const conv = form.getCheckBox("ClmMed_EBank_Conventional");
+    const isl  = form.getCheckBox("ClmMed_EBank_Islamic");
+
+    if (conventional) conv.check(); else conv.uncheck();
+    if (islamic) isl.check(); else isl.uncheck();
+  } catch (e) {
+    console.error("Error writing bank type:", e);
+  }
+}
+
+writeBankAccountType(form);    
+
 /* ---------- Date Input Helper : Combine into ONE string  ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   // Target only date groups that have data-combine="true"
@@ -2083,8 +2103,7 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Accident_AbsentMonth", $("ClmMed_Accident_AbsentMonth").value);        
   safeSetText(form, "ClmMed_Accident_ReturnMonth", $("ClmMed_Accident_ReturnMonth").value);
   safeSetText(form, "ClmMed_Accident_AbsentYear", $("ClmMed_Accident_AbsentYear").value);
-  safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Email", $("ClmMed_Insuredinfo_Email").value);     
+  safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);   
 
  // Doctors     
   safeSetText(form, "ClmMed_Dr_First_Date", $("ClmMed_Dr_First_Date").value);
@@ -2138,26 +2157,6 @@ async function fillPDF(templateFileName, action = 'download') {
     await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 370,  y: 200, factor: 0.50 });
     await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 70, y: 200, factor: 0.50 });    
 
-
-/* ---------- WRITE BANK ACCOUNT TYPE TO PDF CHECKBOXES ---------- */
-function writeBankAccountType(form) {
-  const selected = localStorage.getItem("Accounttype"); // ID stored
-
-  const conventional = (selected === "ClmMed_EBank_Conventional");
-  const islamic = (selected === "ClmMed_EBank_Islamic");
-
-  try {
-    const conv = form.getCheckBox("ClmMed_EBank_Conventional");
-    const isl  = form.getCheckBox("ClmMed_EBank_Islamic");
-
-    if (conventional) conv.check(); else conv.uncheck();
-    if (islamic) isl.check(); else isl.uncheck();
-  } catch (e) {
-    console.error("Error writing bank type:", e);
-  }
-}
-
-writeBankAccountType(form);
     
     // Flatten form fields before saving
     //form.flatten();
