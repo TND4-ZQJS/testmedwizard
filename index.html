@@ -1969,18 +1969,25 @@ async function fillPDF(templateFileName, action = 'download') {
 
   // Helper function to safely fetch input DOM values without crashing on missing elements
   // Updated getValue helper that bridges DOM inputs AND localStorage combined fields
-  const getValue = (id) => {
-    const el = document.getElementById(id);
-    
-    // 1. If it's a real HTML input/textarea/select with a value, use it
-    if (el && el.value !== undefined && el.value.trim() !== "") {
-      return el.value;
-    }
-    
-    // 2. If it's a date/time container (div) or missing from DOM, fetch from localStorage
-    const saved = localStorage.getItem(id);
-    return saved ? saved : "";
-  };
+ const getValue = (id) => {
+  // 1. Direct check: Standard HTML element with matching id="..."
+  const el = document.getElementById(id);
+  if (el && el.value !== undefined && el.value.trim() !== "") {
+    return el.value;
+  }
+
+  // 2. Dynamic check: Look for date groups with data-field="id"
+  const dateGroup = document.querySelector(`.date-group[data-field="${id}"]`);
+  if (dateGroup) {
+    const inputs = dateGroup.querySelectorAll(".date-input");
+    const [d, m, y] = Array.from(inputs).map(i => i.value.trim());
+    const combined = (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
+    if (combined) return combined;
+  }
+
+  // 3. Fallback: Check localStorage
+  return localStorage.getItem(id) || "";
+};
 
   const getChecked = (id) => {
     const el = document.getElementById(id);
