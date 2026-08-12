@@ -1,0 +1,52 @@
+/* ============================================================
+    GLOBAL DESIGN VARIABLES (Unified Workspace Framework)
+   ============================================================ */
+*, *::before, *::after {box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+    --nav-height: 52px;
+    --accent: #0071e3;
+    --bg: #f5f5f7;       /* Clean gray workspace canvas background */
+    --surface: #ffffff;  /* Card surface background */
+    --text-primary: #1d1d1f;
+    --text-secondary: #515154;
+    --text-tertiary: #86868b;
+    --border: rgba(0, 0, 0, 0.06);
+    --line: #e9e9ee;
+}
+body {background-color: var(--bg); color: var(--text-primary);font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;-webkit-font-smoothing: antialiased;line-height: 1.5;}
+.container {max-width: 940px;margin: 40px auto;padding: 0 24px 20px;}
+
+/* ============================================================
+    PREMIUM iOS BACK NAVIGATION ENGINE (Optimized)
+   ============================================================ */
+.back-navigation-container {max-width: 940px;margin: 20px auto 0 auto;padding: 0 24px;display: flex;align-items: center;}
+a.back-link,
+a.back-link span {text-decoration: none !important;text-decoration-line: none !important;border-bottom: none !important;box-shadow: none !important;outline: none !important;}
+a.back-link {display: inline-flex;align-items: center;gap: 2px;color:#007aff; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;font-weight: 400;letter-spacing: -0.3px;transition: opacity 0.15s ease;cursor: pointer;-webkit-user-select: none;user-select: none;}
+a.back-link:hover {opacity: 0.7;}
+a.back-link:active {opacity: 0.3;}
+a.back-link svg {margin-left: -6px;transform: translateY(0.5px);stroke: #007aff !important;fill: none; /* Ensures vector shapes don't accidentally bloat */}
+
+/* ---------- WIZARD CSS ---------- */ 
+  /* Progress Tracker Container */
+.step-indicator {display: flex;justify-content: space-between;margin-bottom: 30px;background: #fff;padding: 15px;border-radius: 12px;border: 1px solid var(--line);overflow-x: auto;gap: 10px;}
+
+ /* Individual Step Tab */
+.step {flex: 1;text-align: center;font-size: 0.8rem;color: #888;cursor: pointer;transition: all 0.2s ease-in-out;padding: 8px;border-radius: 8px;min-width: 90px;display: flex;flex-direction: column;align-items: center;}
+
+/* Hover effect for Expert users jumping around */
+.step:hover {background: #f0f7ff;color: var(--accent);}
+.step.active {color: var(--accent);font-weight: 600;background: #f0f7ff;}
+.step-num {width: 28px;height: 28px;line-height: 28px;border-radius: 50%;background: #eee;display: block;margin-bottom: 6px;font-size: 0.85rem;transition: background 0.3s;}
+.step.active .step-num {background: var(--accent);color: #fff;}
+
+/* Wizard Step Visibility */
+.wizard-step {display: none;}
+.wizard-step.active {display: block;animation: slideIn 0.3s ease-out;}
+
+@keyframes slideIn {from { opacity: 0; transform: translateX(10px); }to { opacity: 1; transform: translateX(0); }}
+
+/* Navigation Footer */
+.wizard-actions {display: flex;justify-content: space-between;margin-top: 30px;padding: 20px 0;border-top: 1px solid var(--line);}
