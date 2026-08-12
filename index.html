@@ -2094,7 +2094,7 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Illness_Diagnosis_Day", $("ClmMed_Illness_Diagnosis_Day").value);
   safeSetText(form, "ClmMed_Accident_Day", $("ClmMed_Accident_Day").value);
   safeSetText(form, "ClmMed_Accident_Month", $("ClmMed_Accident_Month").value);
-  safeSetText(form, "ClmMed_Accident_Time", $("ClmMed_Accident_Time").value);  
+  safeSetText(form, "ClmMed_Accident_Time", getCombinedTime("ClmMed_Accident_Time"));  
   safeSetText(form, "ClmMed_Accident_AM", $("ClmMed_Accident_AM").value);
   safeSetText(form, "ClmMed_Accident_PM", $("ClmMed_Accident_PM").value);
   safeSetText(form, "ClmMed_Accident_Place", $("ClmMed_Accident_Place").value);
@@ -2108,6 +2108,7 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Accident_ReturnMonth", $("ClmMed_Accident_ReturnMonth").value);
   safeSetText(form, "ClmMed_Accident_AbsentYear", $("ClmMed_Accident_AbsentYear").value);
   safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);   
+
 
  // Doctors     
   safeSetText(form, "ClmMed_Dr_First_Date", getCombinedDate("ClmMed_Dr_First"));
