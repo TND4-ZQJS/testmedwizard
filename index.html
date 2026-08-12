@@ -1125,6 +1125,15 @@ function safeCheck(form, name, checked){
   try{ const cb = form.getCheckBox(name); if (checked) cb.check(); else cb.uncheck(); } catch(e){ }
 }
 
+// Helper to combine Day, Month, Year inputs live off the DOM
+function getCombinedDate(baseId) {
+  const d = $(`${baseId}_Day`)?.value?.trim() || "";
+  const m = $(`${baseId}_Month`)?.value?.trim() || "";
+  const y = $(`${baseId}_Year`)?.value?.trim() || "";
+  return (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
+}
+
+
 /* ---------- Save Indicator & Persistence ---------- */
 const saveStatusEl = $("saveStatus");
 function showSaveStatus(){
@@ -1144,13 +1153,23 @@ function saveElValue(el){
 }
 
 function autoBindSave(el){
+  if(!el.id) return;
+
   const saved = localStorage.getItem(el.id);
   if(saved !== null){
-    if(el.type === 'checkbox' || el.type === 'radio') el.checked = (saved === 'true');
-    else el.value = saved;
+    if(el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = (saved === 'true');
+    } else {
+      el.value = saved;
+    }
+    
+    // ⚡ ADD THIS EXACT LINE HERE:
+    el.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  el.addEventListener((el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input', ()=> saveElValue(el));
+
+  el.addEventListener((el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input', () => saveElValue(el));
 }
+
 
 window.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("input, select, textarea").forEach(el => {
@@ -2016,6 +2035,8 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Basicinfo_Year", $("ClmMed_Basicinfo_Year").value);
   safeSetText(form, "ClmMed_Basicinfo_Agent", $("ClmMed_Basicinfo_Agent").value);
   safeSetText(form, "ClmMed_Basicinfo_Mobile", $("ClmMed_Basicinfo_Mobile").value);  
+
+
       
   // Claim type 
   safeCheck(form, "ClmMed_Claimtype_Hosp", $("ClmMed_Claimtype_Hosp").checked);
@@ -2109,16 +2130,17 @@ async function fillPDF(templateFileName, action = 'download') {
   safeCheck(form, "ClmMed_EBank_Conventional", $("ClmMed_EBank_Conventional").checked);
   safeCheck(form, "ClmMed_EBank_Islamic", $("ClmMed_EBank_Islamic").checked);     
 
-   // Signing Details
+  // Signing Details
   safeSetText(form, "ClmMed_Sign_Witness_Name", $("ClmMed_Sign_Witness_Name").value);
   safeSetText(form, "ClmMed_Sign_Witness_NIRC", $("ClmMed_Sign_Witness_NIRC").value);
-  safeSetText(form, "ClmMed_Sign_Witness_Date", $("ClmMed_Sign_Witness_Date").value);
+  safeSetText(form, "ClmMed_Sign_Witness_Date", getCombinedDate("ClmMed_Sign_Witness")); // ✅ Updated
   safeSetText(form, "ClmMed_Sign_Witness_Mobile", $("ClmMed_Sign_Witness_Mobile").value);
   safeSetText(form, "ClmMed_Sign_PO_Name", $("ClmMed_Sign_PO_Name").value);          
   safeSetText(form, "ClmMed_Sign_PO_NIRC", $("ClmMed_Sign_PO_NIRC").value);
-  safeSetText(form, "ClmMed_Sign_PO_Date", $("ClmMed_Sign_PO_Date").value);     
+  safeSetText(form, "ClmMed_Sign_PO_Date", getCombinedDate("ClmMed_Sign_PO"));           // ✅ Updated
   safeSetText(form, "ClmMed_Sign_Relationship", $("ClmMed_Sign_Relationship").value);
   safeSetText(form, "ClmMed_Sign_Relationship_Mobile", $("ClmMed_Sign_Relationship_Mobile").value);
+
 
    // Embed Signatures (Note: 0-indexed page numbering)
     // For Page 1 use 0, Page 2 use 1, Page 3 use 2
