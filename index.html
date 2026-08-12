@@ -1133,6 +1133,21 @@ function getCombinedDate(baseId) {
   return (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
 }
 
+// Helper to combine Hour, Minute, and AM/PM inputs live off the DOM
+function getCombinedTime(baseId) {
+  // Checks for _Hour / _Minute / _Ampm or _HH / _MM
+  const h = ($(`${baseId}_Hour`).value || $(`${baseId}_HH`).value || "").trim();
+  const m = ($(`${baseId}_Minute`).value || $(`${baseId}_MM`).value || "").trim();
+  const ampm = ($(`${baseId}_Ampm`).value || $(`${baseId}_AMPM`).value || "").trim();
+
+  if (!h && !m) return "";
+
+  const hh = h.padStart(2, "0");
+  const mm = m.padStart(2, "0");
+  return `${hh}:${mm} ${ampm}`.trim();
+}
+
+
 
 /* ---------- Save Indicator & Persistence ---------- */
 const saveStatusEl = $("saveStatus");
@@ -2095,14 +2110,15 @@ async function fillPDF(templateFileName, action = 'download') {
   safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);   
 
  // Doctors     
-  safeSetText(form, "ClmMed_Dr_First_Date", $("ClmMed_Dr_First_Date").value);
+  safeSetText(form, "ClmMed_Dr_First_Date", getCombinedDate("ClmMed_Dr_First"));
   safeSetText(form, "ClmMed_Dr_First_NameAdd", $("ClmMed_Dr_First_NameAdd").value);
   safeSetText(form, "ClmMed_Dr_Others_NameAdd", $("ClmMed_Dr_Others_NameAdd").value);
-  safeSetText(form, "ClmMed_Dr_Others_Date", $("ClmMed_Dr_Others_Date").value); 
-  safeSetText(form, "ClmMed_Dr_Regular_Date", $("ClmMed_Dr_Regular_Date").value);
+  safeSetText(form, "ClmMed_Dr_Others_Date", getCombinedDate("ClmMed_Dr_Others"));
+  safeSetText(form, "ClmMed_Dr_Regular_Date", getCombinedDate("ClmMed_Dr_Regular"));
   safeSetText(form, "ClmMed_Dr_Regular_NameAdd", $("ClmMed_Dr_Regular_NameAdd").value);
-  safeSetText(form, "ClmMed_Dr_5yrs_Date", $("ClmMed_Dr_5yrs_Date").value);
+  safeSetText(form, "ClmMed_Dr_5yrs_Date", getCombinedDate("ClmMed_Dr_5yrs"));
   safeSetText(form, "ClmMed_Dr_5yrs_NameAdd", $("ClmMed_Dr_5yrs_NameAdd").value);  
+
 
   // Other Policies
   safeSetText(form, "ClmMed_OtherCover_CompName1", $("ClmMed_OtherCover_CompName1").value);
