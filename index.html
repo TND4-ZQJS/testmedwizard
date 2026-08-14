@@ -1807,7 +1807,7 @@ async function fillPDF(templateFileName, action = 'download') {
   if (action === 'view') {
     pdfWindow = window.open('about:blank', '_blank');
     if (pdfWindow) {
-      pdfWindow.document.write('<p style="font-family:sans-serif; padding:20px; font-size:16px;">Generating PDF preview, please wait...</p>');
+      pdfWindow.document.write('<!DOCTYPE html><html><head><title>Generating PDF...</title></head><body style="font-family:sans-serif;padding:20px;font-size:16px;">Generating PDF preview, please wait...</body></html>');
     }
   }
 
@@ -1989,16 +1989,34 @@ async function fillPDF(templateFileName, action = 'download') {
 
     const finalFileName = `${policyNum}_Medical_Accidental_Claim.pdf`;
 
-    // 5. Execute action (View in new tab via full-screen iframe OR Force Download)
+    // 5. Execute action (Browser-specific handling)
     if (action === 'view') {
       if (pdfWindow && !pdfWindow.closed) {
-        pdfWindow.document.title = finalFileName;
-        pdfWindow.document.body.style.margin = "0";
-        pdfWindow.document.body.style.height = "100vh";
-        pdfWindow.document.body.style.overflow = "hidden";
-        pdfWindow.document.body.innerHTML = `
-          <iframe src="${url}" style="width:100%; height:100%; border:none; display:block;" title="${finalFileName}"></iframe>
-        `;
+        const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
+
+        if (isFirefox) {
+          // Firefox logic: Embed PDF to bypass security restrictions on blob URLs
+          pdfWindow.document.open();
+          pdfWindow.document.write(`
+            <!DOCTYPE html>
+            <html style="width:100%; height:100%; margin:0; padding:0;">
+            <head>
+              <title>${finalFileName}</title>
+              <style>
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #525659; }
+                embed { width: 100%; height: 100%; border: none; display: block; }
+              </style>
+            </head>
+            <body>
+              <embed src="${url}#toolbar=1&navpanes=1&view=FitH" type="application/pdf" width="100%" height="100%" />
+            </body>
+            </html>
+          `);
+          pdfWindow.document.close();
+        } else {
+          // Chrome, Safari, Edge logic: Preserve default native viewer experience
+          pdfWindow.location.href = url;
+        }
       } else {
         window.open(url, '_blank');
       }
@@ -2011,7 +2029,7 @@ async function fillPDF(templateFileName, action = 'download') {
       link.remove();
     }
 
-    // 6. Clean up Blob URL memory leak (60 seconds for view mode)
+    // 6. Clean up Blob URL memory leak
     setTimeout(() => URL.revokeObjectURL(url), action === 'view' ? 60000 : 5000);
 
   } catch (err) {
@@ -2022,6 +2040,7 @@ async function fillPDF(templateFileName, action = 'download') {
     actionButtons.forEach(btn => btn.disabled = false);
   }
 }
+
 
 
 
