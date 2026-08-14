@@ -1802,31 +1802,39 @@ if (savedType) {
 
 /* ---------- Generate PDF ---------- */
 async function fillPDF(templateFileName, action = 'download') {
+  // 1. OPEN BLANK TAB IMMEDIATELY on click (Fixes Firefox Popup Blocker)
+  let pdfWindow = null;
+  if (action === 'view') {
+    pdfWindow = window.open('about:blank', '_blank');
+    if (pdfWindow) {
+      pdfWindow.document.write('<p style="font-family:sans-serif; padding:20px; font-size:16px;">Generating PDF preview, please wait...</p>');
+    }
+  }
+
   // Grab action buttons to disable them during generation
   const actionButtons = document.querySelectorAll('.actions button');
   actionButtons.forEach(btn => btn.disabled = true);
 
   // Helper function to safely fetch input DOM values without crashing on missing elements
-  // Updated getValue helper that bridges DOM inputs AND localStorage combined fields
- const getValue = (id) => {
-  // 1. Direct check: Standard HTML element with matching id="..."
-  const el = document.getElementById(id);
-  if (el && el.value !== undefined && el.value.trim() !== "") {
-    return el.value;
-  }
+  const getValue = (id) => {
+    // 1. Direct check: Standard HTML element with matching id="..."
+    const el = document.getElementById(id);
+    if (el && el.value !== undefined && el.value.trim() !== "") {
+      return el.value;
+    }
 
-  // 2. Dynamic check: Look for date groups with data-field="id"
-  const dateGroup = document.querySelector(`.date-group[data-field="${id}"]`);
-  if (dateGroup) {
-    const inputs = dateGroup.querySelectorAll(".date-input");
-    const [d, m, y] = Array.from(inputs).map(i => i.value.trim());
-    const combined = (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
-    if (combined) return combined;
-  }
+    // 2. Dynamic check: Look for date groups with data-field="id"
+    const dateGroup = document.querySelector(`.date-group[data-field="${id}"]`);
+    if (dateGroup) {
+      const inputs = dateGroup.querySelectorAll(".date-input");
+      const [d, m, y] = Array.from(inputs).map(i => i.value.trim());
+      const combined = (d || m || y) ? [d, m, y].filter(Boolean).join("/") : "";
+      if (combined) return combined;
+    }
 
-  // 3. Fallback: Check localStorage
-  return localStorage.getItem(id) || "";
-};
+    // 3. Fallback: Check localStorage
+    return localStorage.getItem(id) || "";
+  };
 
   const getChecked = (id) => {
     const el = document.getElementById(id);
@@ -1843,138 +1851,129 @@ async function fillPDF(templateFileName, action = 'download') {
 
     // 2. Load PDF document & get interactive form
     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-    const form = pdfDoc.getForm(); // <-- FIXED: Form initialization added
+    const form = pdfDoc.getForm();
 
-   // Policy Details 
-  safeSetText(form, "ClmMed_Basicinfo_PolicyNo1", $("ClmMed_Basicinfo_PolicyNo1").value);
-  safeSetText(form, "ClmMed_Basicinfo_PolicyNo2", $("ClmMed_Basicinfo_PolicyNo2").value);
-  safeSetText(form, "ClmMed_Basicinfo_PolicyNo3", $("ClmMed_Basicinfo_PolicyNo3").value);
-  safeSetText(form, "ClmMed_Basicinfo_PolicyNo4", $("ClmMed_Basicinfo_PolicyNo4").value);
-  safeSetText(form, "ClmMed_Basicinfo_Day", $("ClmMed_Basicinfo_Day").value);
-  safeSetText(form, "ClmMed_Basicinfo_Month", $("ClmMed_Basicinfo_Month").value);
-  safeSetText(form, "ClmMed_Basicinfo_Year", $("ClmMed_Basicinfo_Year").value);
-  safeSetText(form, "ClmMed_Basicinfo_Agent", $("ClmMed_Basicinfo_Agent").value);
-  safeSetText(form, "ClmMed_Basicinfo_Mobile", $("ClmMed_Basicinfo_Mobile").value);  
+    // Policy Details 
+    safeSetText(form, "ClmMed_Basicinfo_PolicyNo1", $("ClmMed_Basicinfo_PolicyNo1").value);
+    safeSetText(form, "ClmMed_Basicinfo_PolicyNo2", $("ClmMed_Basicinfo_PolicyNo2").value);
+    safeSetText(form, "ClmMed_Basicinfo_PolicyNo3", $("ClmMed_Basicinfo_PolicyNo3").value);
+    safeSetText(form, "ClmMed_Basicinfo_PolicyNo4", $("ClmMed_Basicinfo_PolicyNo4").value);
+    safeSetText(form, "ClmMed_Basicinfo_Day", $("ClmMed_Basicinfo_Day").value);
+    safeSetText(form, "ClmMed_Basicinfo_Month", $("ClmMed_Basicinfo_Month").value);
+    safeSetText(form, "ClmMed_Basicinfo_Year", $("ClmMed_Basicinfo_Year").value);
+    safeSetText(form, "ClmMed_Basicinfo_Agent", $("ClmMed_Basicinfo_Agent").value);
+    safeSetText(form, "ClmMed_Basicinfo_Mobile", $("ClmMed_Basicinfo_Mobile").value);  
 
+    // Claim type 
+    safeCheck(form, "ClmMed_Claimtype_Hosp", $("ClmMed_Claimtype_Hosp").checked);
+    safeCheck(form, "ClmMed_Claimtype_PrePost", $("ClmMed_Claimtype_PrePost").checked);
+    safeCheck(form, "ClmMed_Claimtype_HospBen", $("ClmMed_Claimtype_HospBen").checked);
+    safeCheck(form, "ClmMed_Claimtype_OpDengue", $("ClmMed_Claimtype_OpDengue").checked);
+    safeCheck(form, "ClmMed_Claimtype_Home", $("ClmMed_Claimtype_Home").checked);
+    safeCheck(form, "ClmMed_Claimtype_OpKidney", $("ClmMed_Claimtype_OpKidney").checked);
+    safeCheck(form, "ClmMed_Claimtype_AccInjury", $("ClmMed_Claimtype_AccInjury").checked);
+    safeCheck(form, "ClmMed_Claimtype_AccIndemnity", $("ClmMed_Claimtype_AccIndemnity").checked);
+    safeCheck(form, "ClmMed_Claimtype_Others", $("ClmMed_Claimtype_Others").checked);
+    safeSetText(form, "ClmMed_Claimtype_Others_Text", $("ClmMed_Claimtype_Others_Text").value);   
+    safeSetText(form, "ClmMed_Claimtype_Amt", $("ClmMed_Claimtype_Amt").value);      
 
-      
-  // Claim type 
-  safeCheck(form, "ClmMed_Claimtype_Hosp", $("ClmMed_Claimtype_Hosp").checked);
-  safeCheck(form, "ClmMed_Claimtype_PrePost", $("ClmMed_Claimtype_PrePost").checked);
-  safeCheck(form, "ClmMed_Claimtype_HospBen", $("ClmMed_Claimtype_HospBen").checked);
-  safeCheck(form, "ClmMed_Claimtype_OpDengue", $("ClmMed_Claimtype_OpDengue").checked);
-  safeCheck(form, "ClmMed_Claimtype_Home", $("ClmMed_Claimtype_Home").checked);
-  safeCheck(form, "ClmMed_Claimtype_OpKidney", $("ClmMed_Claimtype_OpKidney").checked);
-  safeCheck(form, "ClmMed_Claimtype_AccInjury", $("ClmMed_Claimtype_AccInjury").checked);
-  safeCheck(form, "ClmMed_Claimtype_AccIndemnity", $("ClmMed_Claimtype_AccIndemnity").checked);
-  safeCheck(form, "ClmMed_Claimtype_Others", $("ClmMed_Claimtype_Others").checked);
-  safeSetText(form, "ClmMed_Claimtype_Others_Text", $("ClmMed_Claimtype_Others_Text").value);   
-  safeSetText(form, "ClmMed_Claimtype_Amt", $("ClmMed_Claimtype_Amt").value);      
+    // Insured     
+    safeSetText(form, "ClmMed_Insuredinfo_Name", $("ClmMed_Insuredinfo_Name").value);
+    safeSetText(form, "ClmMed_Insuredinfo_NIRC", $("ClmMed_Insuredinfo_NIRC").value);
+    safeSetText(form, "ClmMed_Insuredinfo_Mobile", $("ClmMed_Insuredinfo_Mobile").value);
+    safeSetText(form, "ClmMed_Insuredinfo_Email", $("ClmMed_Insuredinfo_Email").value); 
+    safeSetText(form, "ClmMed_Insuredinfo_Add", $("ClmMed_Insuredinfo_Add").value);
+    safeSetText(form, "ClmMed_Insuredinfo_Occupation", $("ClmMed_Insuredinfo_Occupation").value);
+    safeSetText(form, "ClmMed_Insuredinfo_Duties", $("ClmMed_Insuredinfo_Duties").value);
+    safeSetText(form, "ClmMed_Insuredinfo_Employer", $("ClmMed_Insuredinfo_Employer").value);  
+    safeSetText(form, "ClmMed_Insuredinfo_EmployerAdd", $("ClmMed_Insuredinfo_EmployerAdd").value);     
 
-  // Insured     
-  safeSetText(form, "ClmMed_Insuredinfo_Name", $("ClmMed_Insuredinfo_Name").value);
-  safeSetText(form, "ClmMed_Insuredinfo_NIRC", $("ClmMed_Insuredinfo_NIRC").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Mobile", $("ClmMed_Insuredinfo_Mobile").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Email", $("ClmMed_Insuredinfo_Email").value); 
-  safeSetText(form, "ClmMed_Insuredinfo_Add", $("ClmMed_Insuredinfo_Add").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Occupation", $("ClmMed_Insuredinfo_Occupation").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Duties", $("ClmMed_Insuredinfo_Duties").value);
-  safeSetText(form, "ClmMed_Insuredinfo_Employer", $("ClmMed_Insuredinfo_Employer").value);  
-  safeSetText(form, "ClmMed_Insuredinfo_EmployerAdd", $("ClmMed_Insuredinfo_EmployerAdd").value);     
-
-   // Policy Owner     
-  safeSetText(form, "ClmMed_POinfo_Name", $("ClmMed_POinfo_Name").value);
-  safeSetText(form, "ClmMed_POinfo_NIRC", $("ClmMed_POinfo_NIRC").value);
-  safeSetText(form, "ClmMed_POinfo_Mobile", $("ClmMed_POinfo_Mobile").value);
-  safeSetText(form, "ClmMed_POinfo_Email", $("ClmMed_POinfo_Email").value); 
-  safeSetText(form, "ClmMed_POinfo_Add", $("ClmMed_POinfo_Add").value);     
+    // Policy Owner     
+    safeSetText(form, "ClmMed_POinfo_Name", $("ClmMed_POinfo_Name").value);
+    safeSetText(form, "ClmMed_POinfo_NIRC", $("ClmMed_POinfo_NIRC").value);
+    safeSetText(form, "ClmMed_POinfo_Mobile", $("ClmMed_POinfo_Mobile").value);
+    safeSetText(form, "ClmMed_POinfo_Email", $("ClmMed_POinfo_Email").value); 
+    safeSetText(form, "ClmMed_POinfo_Add", $("ClmMed_POinfo_Add").value);     
 
     // Claims Details 
-  safeSetText(form, "ClmMed_Illness_Nature", $("ClmMed_Illness_Nature").value);
-  safeSetText(form, "ClmMed_Illness_Sympton", $("ClmMed_Illness_Sympton").value);
-  safeSetText(form, "ClmMed_Illness_Diagnosis_Month", $("ClmMed_Illness_Diagnosis_Month").value);
-  safeSetText(form, "ClmMed_Illness_Diagnosis_Year", $("ClmMed_Illness_Diagnosis_Year").value);
-  safeSetText(form, "ClmMed_Illness_Onset_Month", $("ClmMed_Illness_Onset_Month").value);
-  safeSetText(form, "ClmMed_Illness_Onset_Year", $("ClmMed_Illness_Onset_Year").value);     
-  safeSetText(form, "ClmMed_Illness_Diagnosis_Day", $("ClmMed_Illness_Diagnosis_Day").value);
-  safeSetText(form, "ClmMed_Accident_Day", $("ClmMed_Accident_Day").value);
-  safeSetText(form, "ClmMed_Accident_Month", $("ClmMed_Accident_Month").value);
-  safeSetText(form, "ClmMed_Accident_Time", getCombinedTime("ClmMed_Accident_Time"));  
-  safeSetText(form, "ClmMed_Accident_AM", $("ClmMed_Accident_AM").value);
-  safeSetText(form, "ClmMed_Accident_PM", $("ClmMed_Accident_PM").value);
-  safeSetText(form, "ClmMed_Accident_Place", $("ClmMed_Accident_Place").value);
-  safeSetText(form, "ClmMed_Accident_How", $("ClmMed_Accident_How").value);
-  safeSetText(form, "ClmMed_Accident_Injury", $("ClmMed_Accident_Injury").value);
-  safeSetText(form, "ClmMed_Illness_Onset_Day", $("ClmMed_Illness_Onset_Day").value);
-  safeSetText(form, "ClmMed_Accident_AbsentDay", $("ClmMed_Accident_AbsentDay").value);
-  safeSetText(form, "ClmMed_Accident_Year", $("ClmMed_Accident_Year").value);
-  safeSetText(form, "ClmMed_Accident_ReturnDay", $("ClmMed_Accident_ReturnDay").value);   
-  safeSetText(form, "ClmMed_Accident_AbsentMonth", $("ClmMed_Accident_AbsentMonth").value);        
-  safeSetText(form, "ClmMed_Accident_ReturnMonth", $("ClmMed_Accident_ReturnMonth").value);
-  safeSetText(form, "ClmMed_Accident_AbsentYear", $("ClmMed_Accident_AbsentYear").value);
-  safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);   
+    safeSetText(form, "ClmMed_Illness_Nature", $("ClmMed_Illness_Nature").value);
+    safeSetText(form, "ClmMed_Illness_Sympton", $("ClmMed_Illness_Sympton").value);
+    safeSetText(form, "ClmMed_Illness_Diagnosis_Month", $("ClmMed_Illness_Diagnosis_Month").value);
+    safeSetText(form, "ClmMed_Illness_Diagnosis_Year", $("ClmMed_Illness_Diagnosis_Year").value);
+    safeSetText(form, "ClmMed_Illness_Onset_Month", $("ClmMed_Illness_Onset_Month").value);
+    safeSetText(form, "ClmMed_Illness_Onset_Year", $("ClmMed_Illness_Onset_Year").value);     
+    safeSetText(form, "ClmMed_Illness_Diagnosis_Day", $("ClmMed_Illness_Diagnosis_Day").value);
+    safeSetText(form, "ClmMed_Accident_Day", $("ClmMed_Accident_Day").value);
+    safeSetText(form, "ClmMed_Accident_Month", $("ClmMed_Accident_Month").value);
+    safeSetText(form, "ClmMed_Accident_Time", getCombinedTime("ClmMed_Accident_Time"));  
+    safeSetText(form, "ClmMed_Accident_AM", $("ClmMed_Accident_AM").value);
+    safeSetText(form, "ClmMed_Accident_PM", $("ClmMed_Accident_PM").value);
+    safeSetText(form, "ClmMed_Accident_Place", $("ClmMed_Accident_Place").value);
+    safeSetText(form, "ClmMed_Accident_How", $("ClmMed_Accident_How").value);
+    safeSetText(form, "ClmMed_Accident_Injury", $("ClmMed_Accident_Injury").value);
+    safeSetText(form, "ClmMed_Illness_Onset_Day", $("ClmMed_Illness_Onset_Day").value);
+    safeSetText(form, "ClmMed_Accident_AbsentDay", $("ClmMed_Accident_AbsentDay").value);
+    safeSetText(form, "ClmMed_Accident_Year", $("ClmMed_Accident_Year").value);
+    safeSetText(form, "ClmMed_Accident_ReturnDay", $("ClmMed_Accident_ReturnDay").value);   
+    safeSetText(form, "ClmMed_Accident_AbsentMonth", $("ClmMed_Accident_AbsentMonth").value);        
+    safeSetText(form, "ClmMed_Accident_ReturnMonth", $("ClmMed_Accident_ReturnMonth").value);
+    safeSetText(form, "ClmMed_Accident_AbsentYear", $("ClmMed_Accident_AbsentYear").value);
+    safeSetText(form, "ClmMed_Accident_ReturnYear", $("ClmMed_Accident_ReturnYear").value);   
 
+    // Doctors     
+    safeSetText(form, "ClmMed_Dr_First_Date", getCombinedDate("ClmMed_Dr_First"));
+    safeSetText(form, "ClmMed_Dr_First_NameAdd", $("ClmMed_Dr_First_NameAdd").value);
+    safeSetText(form, "ClmMed_Dr_Others_NameAdd", $("ClmMed_Dr_Others_NameAdd").value);
+    safeSetText(form, "ClmMed_Dr_Others_Date", getCombinedDate("ClmMed_Dr_Others"));
+    safeSetText(form, "ClmMed_Dr_Regular_Date", getCombinedDate("ClmMed_Dr_Regular"));
+    safeSetText(form, "ClmMed_Dr_Regular_NameAdd", $("ClmMed_Dr_Regular_NameAdd").value);
+    safeSetText(form, "ClmMed_Dr_5yrs_Date", getCombinedDate("ClmMed_Dr_5yrs"));
+    safeSetText(form, "ClmMed_Dr_5yrs_NameAdd", $("ClmMed_Dr_5yrs_NameAdd").value);  
 
- // Doctors     
-  safeSetText(form, "ClmMed_Dr_First_Date", getCombinedDate("ClmMed_Dr_First"));
-  safeSetText(form, "ClmMed_Dr_First_NameAdd", $("ClmMed_Dr_First_NameAdd").value);
-  safeSetText(form, "ClmMed_Dr_Others_NameAdd", $("ClmMed_Dr_Others_NameAdd").value);
-  safeSetText(form, "ClmMed_Dr_Others_Date", getCombinedDate("ClmMed_Dr_Others"));
-  safeSetText(form, "ClmMed_Dr_Regular_Date", getCombinedDate("ClmMed_Dr_Regular"));
-  safeSetText(form, "ClmMed_Dr_Regular_NameAdd", $("ClmMed_Dr_Regular_NameAdd").value);
-  safeSetText(form, "ClmMed_Dr_5yrs_Date", getCombinedDate("ClmMed_Dr_5yrs"));
-  safeSetText(form, "ClmMed_Dr_5yrs_NameAdd", $("ClmMed_Dr_5yrs_NameAdd").value);  
+    // Other Policies
+    safeSetText(form, "ClmMed_OtherCover_CompName1", $("ClmMed_OtherCover_CompName1").value);
+    safeSetText(form, "ClmMed_OtherCover_CompName2", $("ClmMed_OtherCover_CompName2").value);
+    safeSetText(form, "ClmMed_OtherCover_CompName3", $("ClmMed_OtherCover_CompName3").value);
+    safeSetText(form, "ClmMed_OtherCover_CompName4", $("ClmMed_OtherCover_CompName4").value);
+    safeSetText(form, "ClmMed_OtherCover_PolicyNo1", $("ClmMed_OtherCover_PolicyNo1").value);
+    safeSetText(form, "ClmMed_OtherCover_PolicyNo2", $("ClmMed_OtherCover_PolicyNo2").value);     
+    safeSetText(form, "ClmMed_OtherCover_PolicyNo3", $("ClmMed_OtherCover_PolicyNo3").value);
+    safeSetText(form, "ClmMed_OtherCover_PolicyNo4", $("ClmMed_OtherCover_PolicyNo4").value);
+    safeSetText(form, "ClmMed_OtherCover_Date1", $("ClmMed_OtherCover_Date1").value);
+    safeSetText(form, "ClmMed_OtherCover_Date2", $("ClmMed_OtherCover_Date2").value);  
+    safeSetText(form, "ClmMed_OtherCover_Date3", $("ClmMed_OtherCover_Date3").value);
+    safeSetText(form, "ClmMed_OtherCover_Date4", $("ClmMed_OtherCover_Date4").value);
+    safeSetText(form, "ClmMed_OtherCover_FA1", $("ClmMed_OtherCover_FA1").value);
+    safeSetText(form, "ClmMed_OtherCover_FA2", $("ClmMed_OtherCover_FA2").value);
+    safeSetText(form, "ClmMed_OtherCover_FA3", $("ClmMed_OtherCover_FA3").value);
+    safeSetText(form, "ClmMed_OtherCover_FA4", $("ClmMed_OtherCover_FA4").value);   
 
+    // E Banking
+    safeSetText(form, "ClmMed_EBank_Name", $("ClmMed_EBank_Name").value);
+    safeSetText(form, "ClmMed_EBank_NIRC", $("ClmMed_EBank_NIRC").value);
+    safeSetText(form, "ClmMed_EBank_AccNo", $("ClmMed_EBank_AccNo").value);
+    safeSetText(form, "ClmMed_EBank_Bank", $("ClmMed_EBank_Bank").value);  
+    safeCheck(form, "ClmMed_EBank_Conventional", $("ClmMed_EBank_Conventional").checked);
+    safeCheck(form, "ClmMed_EBank_Islamic", $("ClmMed_EBank_Islamic").checked);     
 
-  // Other Policies
-  safeSetText(form, "ClmMed_OtherCover_CompName1", $("ClmMed_OtherCover_CompName1").value);
-  safeSetText(form, "ClmMed_OtherCover_CompName2", $("ClmMed_OtherCover_CompName2").value);
-  safeSetText(form, "ClmMed_OtherCover_CompName3", $("ClmMed_OtherCover_CompName3").value);
-  safeSetText(form, "ClmMed_OtherCover_CompName4", $("ClmMed_OtherCover_CompName4").value);
-  safeSetText(form, "ClmMed_OtherCover_PolicyNo1", $("ClmMed_OtherCover_PolicyNo1").value);
-  safeSetText(form, "ClmMed_OtherCover_PolicyNo2", $("ClmMed_OtherCover_PolicyNo2").value);     
-  safeSetText(form, "ClmMed_OtherCover_PolicyNo3", $("ClmMed_OtherCover_PolicyNo3").value);
-  safeSetText(form, "ClmMed_OtherCover_PolicyNo4", $("ClmMed_OtherCover_PolicyNo4").value);
-  safeSetText(form, "ClmMed_OtherCover_Date1", $("ClmMed_OtherCover_Date1").value);
-  safeSetText(form, "ClmMed_OtherCover_Date2", $("ClmMed_OtherCover_Date2").value);  
-  safeSetText(form, "ClmMed_OtherCover_Date3", $("ClmMed_OtherCover_Date3").value);
-  safeSetText(form, "ClmMed_OtherCover_Date4", $("ClmMed_OtherCover_Date4").value);
-  safeSetText(form, "ClmMed_OtherCover_FA1", $("ClmMed_OtherCover_FA1").value);
-  safeSetText(form, "ClmMed_OtherCover_FA2", $("ClmMed_OtherCover_FA2").value);
-  safeSetText(form, "ClmMed_OtherCover_FA3", $("ClmMed_OtherCover_FA3").value);
-  safeSetText(form, "ClmMed_OtherCover_FA4", $("ClmMed_OtherCover_FA4").value);   
+    // Signing Details
+    safeSetText(form, "ClmMed_Sign_Witness_Name", $("ClmMed_Sign_Witness_Name").value);
+    safeSetText(form, "ClmMed_Sign_Witness_NIRC", $("ClmMed_Sign_Witness_NIRC").value);
+    safeSetText(form, "ClmMed_Sign_Witness_Date", getCombinedDate("ClmMed_Sign_Witness"));
+    safeSetText(form, "ClmMed_Sign_Witness_Mobile", $("ClmMed_Sign_Witness_Mobile").value);
+    safeSetText(form, "ClmMed_Sign_PO_Name", $("ClmMed_Sign_PO_Name").value);          
+    safeSetText(form, "ClmMed_Sign_PO_NIRC", $("ClmMed_Sign_PO_NIRC").value);
+    safeSetText(form, "ClmMed_Sign_PO_Date", getCombinedDate("ClmMed_Sign_PO"));
+    safeSetText(form, "ClmMed_Sign_Relationship", $("ClmMed_Sign_Relationship").value);
+    safeSetText(form, "ClmMed_Sign_Relationship_Mobile", $("ClmMed_Sign_Relationship_Mobile").value);
 
-   // E Banking
-  safeSetText(form, "ClmMed_EBank_Name", $("ClmMed_EBank_Name").value);
-  safeSetText(form, "ClmMed_EBank_NIRC", $("ClmMed_EBank_NIRC").value);
-  safeSetText(form, "ClmMed_EBank_AccNo", $("ClmMed_EBank_AccNo").value);
-  safeSetText(form, "ClmMed_EBank_Bank", $("ClmMed_EBank_Bank").value);  
-  safeCheck(form, "ClmMed_EBank_Conventional", $("ClmMed_EBank_Conventional").checked);
-  safeCheck(form, "ClmMed_EBank_Islamic", $("ClmMed_EBank_Islamic").checked);     
+    // Embed Signatures (Note: 0-indexed page numbering)
+    const targetPageIndex = 3; 
 
-  // Signing Details
-  safeSetText(form, "ClmMed_Sign_Witness_Name", $("ClmMed_Sign_Witness_Name").value);
-  safeSetText(form, "ClmMed_Sign_Witness_NIRC", $("ClmMed_Sign_Witness_NIRC").value);
-  safeSetText(form, "ClmMed_Sign_Witness_Date", getCombinedDate("ClmMed_Sign_Witness")); // ✅ Updated
-  safeSetText(form, "ClmMed_Sign_Witness_Mobile", $("ClmMed_Sign_Witness_Mobile").value);
-  safeSetText(form, "ClmMed_Sign_PO_Name", $("ClmMed_Sign_PO_Name").value);          
-  safeSetText(form, "ClmMed_Sign_PO_NIRC", $("ClmMed_Sign_PO_NIRC").value);
-  safeSetText(form, "ClmMed_Sign_PO_Date", getCombinedDate("ClmMed_Sign_PO"));           // ✅ Updated
-  safeSetText(form, "ClmMed_Sign_Relationship", $("ClmMed_Sign_Relationship").value);
-  safeSetText(form, "ClmMed_Sign_Relationship_Mobile", $("ClmMed_Sign_Relationship_Mobile").value);
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 370, y: 200, factor: 0.50 });
+    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 70,  y: 200, factor: 0.50 });    
 
-
-   // Embed Signatures (Note: 0-indexed page numbering)
-    // For Page 1 use 0, Page 2 use 1, Page 3 use 2
-    const targetPageIndex = 3; // Adjust this index to match the target page in your PDF template
-
-    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 370,  y: 200, factor: 0.50 });
-    await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 70, y: 200, factor: 0.50 });    
-
-    
-    // Flatten form fields before saving
-    //form.flatten();
-    
+    // Save generated PDF
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
@@ -1996,7 +1995,13 @@ async function fillPDF(templateFileName, action = 'download') {
 
     // 5. Execute action (View in new tab OR Force Download)
     if (action === 'view') {
-      window.open(url, '_blank');
+      if (pdfWindow) {
+        // Redirect pre-opened blank window to PDF Blob URL
+        pdfWindow.location.href = url;
+      } else {
+        // Fallback if popup blocker suppressed initial open
+        window.open(url, '_blank');
+      }
     } else {
       const link = document.createElement("a");
       link.href = url;
@@ -2006,10 +2011,13 @@ async function fillPDF(templateFileName, action = 'download') {
       link.remove();
     }
 
-    // 6. Clean up Blob URL memory leak after 5 seconds
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    // 6. Clean up Blob URL memory leak (giving 60s for view mode so PDF viewer loads completely)
+    setTimeout(() => URL.revokeObjectURL(url), action === 'view' ? 60000 : 5000);
 
   } catch (err) {
+    // Close pre-opened window if an error happens during PDF creation
+    if (pdfWindow) pdfWindow.close();
+
     console.error("Critical PDF Error:", err);
     alert("PDF generation failed: " + (err.message || err));
   } finally {
@@ -2017,6 +2025,7 @@ async function fillPDF(templateFileName, action = 'download') {
     actionButtons.forEach(btn => btn.disabled = false);
   }
 }
+
 
 
 /* ---------- RESET ALL DATA (ClmMed / LF5191) ---------- */
