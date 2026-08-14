@@ -1817,13 +1817,11 @@ async function fillPDF(templateFileName, action = 'download') {
 
   // Helper function to safely fetch input DOM values without crashing on missing elements
   const getValue = (id) => {
-    // 1. Direct check: Standard HTML element with matching id="..."
     const el = document.getElementById(id);
     if (el && el.value !== undefined && el.value.trim() !== "") {
       return el.value;
     }
 
-    // 2. Dynamic check: Look for date groups with data-field="id"
     const dateGroup = document.querySelector(`.date-group[data-field="${id}"]`);
     if (dateGroup) {
       const inputs = dateGroup.querySelectorAll(".date-input");
@@ -1832,7 +1830,6 @@ async function fillPDF(templateFileName, action = 'download') {
       if (combined) return combined;
     }
 
-    // 3. Fallback: Check localStorage
     return localStorage.getItem(id) || "";
   };
 
@@ -1967,9 +1964,8 @@ async function fillPDF(templateFileName, action = 'download') {
     safeSetText(form, "ClmMed_Sign_Relationship", $("ClmMed_Sign_Relationship").value);
     safeSetText(form, "ClmMed_Sign_Relationship_Mobile", $("ClmMed_Sign_Relationship_Mobile").value);
 
-    // Embed Signatures (Note: 0-indexed page numbering)
+    // Embed Signatures
     const targetPageIndex = 3; 
-
     await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "owner",   x: 370, y: 200, factor: 0.50 });
     await embedSignatureToPdf(pdfDoc, targetPageIndex, { role: "witness", x: 70,  y: 200, factor: 0.50 });    
 
@@ -1993,13 +1989,17 @@ async function fillPDF(templateFileName, action = 'download') {
 
     const finalFileName = `${policyNum}_Medical_Accidental_Claim.pdf`;
 
-    // 5. Execute action (View in new tab OR Force Download)
+    // 5. Execute action (View in new tab via full-screen iframe OR Force Download)
     if (action === 'view') {
-      if (pdfWindow) {
-        // Redirect pre-opened blank window to PDF Blob URL
-        pdfWindow.location.href = url;
+      if (pdfWindow && !pdfWindow.closed) {
+        pdfWindow.document.title = finalFileName;
+        pdfWindow.document.body.style.margin = "0";
+        pdfWindow.document.body.style.height = "100vh";
+        pdfWindow.document.body.style.overflow = "hidden";
+        pdfWindow.document.body.innerHTML = `
+          <iframe src="${url}" style="width:100%; height:100%; border:none; display:block;" title="${finalFileName}"></iframe>
+        `;
       } else {
-        // Fallback if popup blocker suppressed initial open
         window.open(url, '_blank');
       }
     } else {
@@ -2011,20 +2011,18 @@ async function fillPDF(templateFileName, action = 'download') {
       link.remove();
     }
 
-    // 6. Clean up Blob URL memory leak (giving 60s for view mode so PDF viewer loads completely)
+    // 6. Clean up Blob URL memory leak (60 seconds for view mode)
     setTimeout(() => URL.revokeObjectURL(url), action === 'view' ? 60000 : 5000);
 
   } catch (err) {
-    // Close pre-opened window if an error happens during PDF creation
-    if (pdfWindow) pdfWindow.close();
-
+    if (pdfWindow && !pdfWindow.closed) pdfWindow.close();
     console.error("Critical PDF Error:", err);
     alert("PDF generation failed: " + (err.message || err));
   } finally {
-    // Re-enable action buttons
     actionButtons.forEach(btn => btn.disabled = false);
   }
 }
+
 
 
 
