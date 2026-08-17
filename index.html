@@ -1014,27 +1014,20 @@ window.addEventListener("DOMContentLoaded", () => {
     
 
 // ---------- Illness/Accident SECTION CONTROL CONFIG ----------
-document.addEventListener("DOMContentLoaded", () => {
+function initIncidentSections() {
   const optionIllness = document.getElementById("optionIllness");
   const optionAccident = document.getElementById("optionAccident");
   const illnessSection = document.getElementById("illnesssection");
   const accidentSection = document.getElementById("accidentsection");
 
-  // Safeguard: stop if elements don't exist on the page
   if (!optionIllness || !optionAccident || !illnessSection || !accidentSection) return;
 
-  // 1. Prevent browser form caching from overriding JS state on refresh
-  optionIllness.autocomplete = "off";
-  optionAccident.autocomplete = "off";
-
-  // Helper: Controls section visibility, disables inputs, & clears values for FillPDF
+  // Helper: Sync visibility, disable hidden inputs, & clear values for FillPDF
   function setSectionState(sectionEl, enabled) {
     if (!sectionEl) return;
     
-    // Toggle visibility
     sectionEl.style.display = enabled ? "block" : "none";
 
-    // Disable and clear inputs so FillPDF skips hidden section data
     const inputs = sectionEl.querySelectorAll("input, select, textarea, button");
     inputs.forEach(el => {
       el.disabled = !enabled;
@@ -1051,47 +1044,75 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 2. Update DOM section visibility & input states
-  function toggleIncidentSections() {
+  // Sync sections to whatever is currently checked
+  function syncSections() {
     setSectionState(illnessSection, optionIllness.checked);
     setSectionState(accidentSection, optionAccident.checked);
   }
 
-  // 3. Save selection state & trigger UI update
-  function handleIncidentChange() {
+  // Force radio buttons to match localStorage
+  function applySavedState() {
+    const savedType = localStorage.getItem("IncidentType");
+
+    if (savedType === "Illness") {
+      optionIllness.checked = true;
+      optionAccident.checked = false;
+    } else if (savedType === "Accident") {
+      optionAccident.checked = true;
+      optionIllness.checked = false;
+    }
+
+    syncSections();
+  }
+
+  // Handle user clicks
+  function handleRadioChange() {
     if (optionIllness.checked) {
       localStorage.setItem("IncidentType", "Illness");
     } else if (optionAccident.checked) {
       localStorage.setItem("IncidentType", "Accident");
-    } else {
-      localStorage.removeItem("IncidentType");
     }
 
-    toggleIncidentSections();
+    syncSections();
   }
 
-  // 4. Restore state from localStorage on page load
-  const savedType = localStorage.getItem("IncidentType");
+  // 1. Initial run on DOM ready
+  applySavedState();
 
-  if (savedType === "Illness") {
-    optionIllness.checked = true;
-    optionAccident.checked = false;
-  } else if (savedType === "Accident") {
-    optionAccident.checked = true;
-    optionIllness.checked = false;
-  } else {
-    // Default fallback if nothing is saved in storage
-    optionIllness.checked = false;
-    optionAccident.checked = false;
-  }
+  // 2. CRITICAL FIX: Run AGAIN right after the browser finishes form restoration
+  setTimeout(applySavedState, 0);
 
-  // 5. Run initial section sync
-  toggleIncidentSections();
+  // 3. Attach change listeners
+  optionIllness.addEventListener("change", handleRadioChange);
+  optionAccident.addEventListener("change", handleRadioChange);
+}
 
-  // 6. Bind change listeners
-  optionIllness.addEventListener("change", handleIncidentChange);
-  optionAccident.addEventListener("change", handleIncidentChange);
+// Listen to both DOMContentLoaded and pageshow (handles page refreshes & back/forward cache)
+document.addEventListener("DOMContentLoaded", initIncidentSections);
+window.addEventListener("pageshow", () => {
+  setTimeout(() => {
+    const savedType = localStorage.getItem("IncidentType");
+    const optionIllness = document.getElementById("optionIllness");
+    const optionAccident = document.getElementById("optionAccident");
+
+    if (optionIllness && optionAccident) {
+      if (savedType === "Illness") {
+        optionIllness.checked = true;
+        optionAccident.checked = false;
+      } else if (savedType === "Accident") {
+        optionAccident.checked = true;
+        optionIllness.checked = false;
+      }
+      
+      const illnessSection = document.getElementById("illnesssection");
+      const accidentSection = document.getElementById("accidentsection");
+      
+      if (illnessSection) illnessSection.style.display = optionIllness.checked ? "block" : "none";
+      if (accidentSection) accidentSection.style.display = optionAccident.checked ? "block" : "none";
+    }
+  }, 0);
 });
+
 
 
   
