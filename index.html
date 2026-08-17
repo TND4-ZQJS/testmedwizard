@@ -1023,16 +1023,41 @@ document.addEventListener("DOMContentLoaded", () => {
   // Safeguard: stop if elements don't exist on the page
   if (!optionIllness || !optionAccident || !illnessSection || !accidentSection) return;
 
-  // 1. Function to update DOM section visibility
-  function toggleIncidentSections() {
-    const isIllness = optionIllness.checked;
-    const isAccident = optionAccident.checked;
+  // 1. Prevent browser form caching from overriding JS state on refresh
+  optionIllness.autocomplete = "off";
+  optionAccident.autocomplete = "off";
 
-    illnessSection.style.display = isIllness ? "block" : "none";
-    accidentSection.style.display = isAccident ? "block" : "none";
+  // Helper: Controls section visibility, disables inputs, & clears values for FillPDF
+  function setSectionState(sectionEl, enabled) {
+    if (!sectionEl) return;
+    
+    // Toggle visibility
+    sectionEl.style.display = enabled ? "block" : "none";
+
+    // Disable and clear inputs so FillPDF skips hidden section data
+    const inputs = sectionEl.querySelectorAll("input, select, textarea, button");
+    inputs.forEach(el => {
+      el.disabled = !enabled;
+
+      if (!enabled) {
+        if (el.type === "checkbox" || el.type === "radio") {
+          el.checked = false;
+        } else if (el.tagName === "SELECT") {
+          el.selectedIndex = 0;
+        } else if (el.type !== "button" && el.type !== "submit") {
+          el.value = "";
+        }
+      }
+    });
   }
 
-  // 2. Function to save selection state & update UI
+  // 2. Update DOM section visibility & input states
+  function toggleIncidentSections() {
+    setSectionState(illnessSection, optionIllness.checked);
+    setSectionState(accidentSection, optionAccident.checked);
+  }
+
+  // 3. Save selection state & trigger UI update
   function handleIncidentChange() {
     if (optionIllness.checked) {
       localStorage.setItem("IncidentType", "Illness");
@@ -1045,7 +1070,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleIncidentSections();
   }
 
-  // 3. Restore state from localStorage on page load
+  // 4. Restore state from localStorage on page load
   const savedType = localStorage.getItem("IncidentType");
 
   if (savedType === "Illness") {
@@ -1055,18 +1080,19 @@ document.addEventListener("DOMContentLoaded", () => {
     optionAccident.checked = true;
     optionIllness.checked = false;
   } else {
-    // Default fallback if nothing is saved
+    // Default fallback if nothing is saved in storage
     optionIllness.checked = false;
     optionAccident.checked = false;
   }
 
-  // 4. Update section visibility based on restored state
+  // 5. Run initial section sync
   toggleIncidentSections();
 
-  // 5. Bind change listeners
+  // 6. Bind change listeners
   optionIllness.addEventListener("change", handleIncidentChange);
   optionAccident.addEventListener("change", handleIncidentChange);
 });
+
 
   
 // ---------- Insured is Policy Owner (Show/Hide Section) ----------
