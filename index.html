@@ -1013,34 +1013,60 @@ window.addEventListener("DOMContentLoaded", () => {
 });
     
 
-// ---------- Ilness/Accident SECTION CONTROL CONFIG (Show/Hide Section) ----------
-function toggleIncidentSections() {
-  const isIllness = document.getElementById("optionIllness").checked;
-  const isAccident = document.getElementById("optionAccident").checked;
-
-  document.getElementById("illnesssection").style.display = isIllness ? "block" : "none";
-  document.getElementById("accidentsection").style.display = isAccident ? "block" : "none";
-}
-
-// Bind change events
-document.getElementById("optionIllness").addEventListener("change", toggleIncidentSections);
-document.getElementById("optionAccident").addEventListener("change", toggleIncidentSections);
-
-// Run once on page load (restore localStorage state)
-document.addEventListener("DOMContentLoaded", toggleIncidentSections);
-
+// ---------- Illness/Accident SECTION CONTROL CONFIG ----------
 document.addEventListener("DOMContentLoaded", () => {
-  const saved = localStorage.getItem("IncidentType");
+  const optionIllness = document.getElementById("optionIllness");
+  const optionAccident = document.getElementById("optionAccident");
+  const illnessSection = document.getElementById("illnesssection");
+  const accidentSection = document.getElementById("accidentsection");
 
-  // If no saved data → clear both on first load
-  if (!saved) {
-    document.getElementById("optionIllness").checked = false;
-    document.getElementById("optionAccident").checked = false;
+  // Safeguard: stop if elements don't exist on the page
+  if (!optionIllness || !optionAccident || !illnessSection || !accidentSection) return;
+
+  // 1. Function to update DOM section visibility
+  function toggleIncidentSections() {
+    const isIllness = optionIllness.checked;
+    const isAccident = optionAccident.checked;
+
+    illnessSection.style.display = isIllness ? "block" : "none";
+    accidentSection.style.display = isAccident ? "block" : "none";
   }
 
-  toggleIncidentSections(); // refresh UI
-});
+  // 2. Function to save selection state & update UI
+  function handleIncidentChange() {
+    if (optionIllness.checked) {
+      localStorage.setItem("IncidentType", "Illness");
+    } else if (optionAccident.checked) {
+      localStorage.setItem("IncidentType", "Accident");
+    } else {
+      localStorage.removeItem("IncidentType");
+    }
 
+    toggleIncidentSections();
+  }
+
+  // 3. Restore state from localStorage on page load
+  const savedType = localStorage.getItem("IncidentType");
+
+  if (savedType === "Illness") {
+    optionIllness.checked = true;
+    optionAccident.checked = false;
+  } else if (savedType === "Accident") {
+    optionAccident.checked = true;
+    optionIllness.checked = false;
+  } else {
+    // Default fallback if nothing is saved
+    optionIllness.checked = false;
+    optionAccident.checked = false;
+  }
+
+  // 4. Update section visibility based on restored state
+  toggleIncidentSections();
+
+  // 5. Bind change listeners
+  optionIllness.addEventListener("change", handleIncidentChange);
+  optionAccident.addEventListener("change", handleIncidentChange);
+});
 
   
 // ---------- Insured is Policy Owner (Show/Hide Section) ----------
