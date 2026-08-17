@@ -1043,12 +1043,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   
-// ---------- SECTION CONTROL CONFIG (Show/Hide Section) ----------
+// ---------- Insured is Policy Owner (Show/Hide Section) ----------
 const CONTROLLER_BY_SECTION = {
   Policyownerinfo: "CB_PO",
 };
-
-// ---------- UI ENABLE/DISABLE TOGGLE ----------
+    
 document.addEventListener("DOMContentLoaded", () => {
   function setSectionEnabled(sectionEl, enabled) {
     if (!sectionEl) return;
@@ -1061,13 +1060,29 @@ document.addEventListener("DOMContentLoaded", () => {
   Object.entries(CONTROLLER_BY_SECTION).forEach(([sectionId, controllerId]) => {
     const controller = document.getElementById(controllerId);
     const section = document.getElementById(sectionId);
+
     if (controller && section) {
-      const updateState = () => setSectionEnabled(section, controller.checked);
+      const storageKey = `toggle_state_${controllerId}`;
+
+      // 1. Restore saved state from localStorage (if present)
+      const savedState = localStorage.getItem(storageKey);
+      if (savedState !== null) {
+        controller.checked = savedState === "true";
+      }
+
+      // 2. Define update function that updates UI and saves state
+      const updateState = () => {
+        setSectionEnabled(section, controller.checked);
+        localStorage.setItem(storageKey, controller.checked);
+      };
+
+      // 3. Attach event listener & set initial state on load
       controller.addEventListener("change", updateState);
-      updateState(); // initialize state on load
+      updateState();
     }
   });
 });
+
 
   
 /* --- UNIVERSAL AUTO-TAB (DATE) LOGIC --- */
